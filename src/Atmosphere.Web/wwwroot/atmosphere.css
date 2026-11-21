@@ -1,0 +1,65 @@
+/* Atmosphere (wwwroot/atmosphere/): Ecordiatlas's offline observation app. Builds on /app.css (colours, buttons, level
+   cells) and is laid out for a phone first. */
+
+html { scroll-padding-top: 6rem; scroll-padding-bottom: 6rem; }
+body.atm { margin: 0; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
+
+.atm-bar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; padding: .5rem 1rem; padding-top: max(.5rem, env(safe-area-inset-top));
+  background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
+.atm-brand { display: inline-flex; align-items: center; gap: .45rem; font-weight: 700; font-size: 1.1rem; color: var(--ink); text-decoration: none; min-height: 44px; }
+.atm-brand img { border-radius: 6px; }
+.atm-signal { font-size: .82rem; }
+.atm-nav { margin-left: auto; display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
+.atm-nav a, .atm-nav button { font-size: .88rem; }
+.atm-nav a { padding: .35rem .5rem; }
+
+.atm-view { max-width: 760px; margin: 0 auto; padding: 1rem 1rem 6rem; outline: none; }
+.atm-view h1 { font-size: 1.35rem; }
+.atm-view h2 { font-size: 1.1rem; margin: 0 0 .6rem; }
+.atm-view .card { padding: .9rem 1rem; }
+
+.atm-lock { max-width: 420px; margin: 2rem auto; }
+.atm-lock input[type="password"] { font-size: 1.3rem; letter-spacing: .2em; }
+.atm-lock .toolbar { margin: .75rem 0 0; }
+
+.atm-list { list-style: none; margin: 0; padding: 0; }
+.atm-list > li { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; padding: .65rem 0; border-top: 1px solid var(--line); }
+.atm-list > li:first-child { border-top: none; }
+.atm-list .who { flex: 1 1 14rem; min-width: 0; }
+.atm-list .who strong { display: block; }
+.atm-list .who .muted { font-size: .88rem; }
+.atm-list .errors { flex-basis: 100%; margin: .2rem 0 0; color: var(--error); font-size: .9rem; }
+
+.atm-choose > li { align-items: flex-start; }
+.atm-choose label.pick { display: flex; gap: .6rem; align-items: flex-start; flex: 1 1 14rem; min-height: 44px; cursor: pointer; }
+.atm-choose label.pick input { width: 1.4rem; height: 1.4rem; min-height: 0; flex: none; margin-top: .1rem; }
+.atm-choose select { flex: 1 1 12rem; width: auto; }
+
+.atm-big { width: 100%; min-height: 48px; font-size: 1.02rem; }
+.atm-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+.atm-photos { display: flex; flex-wrap: wrap; gap: .5rem; margin: .4rem 0; padding: 0; list-style: none; }
+.atm-photos li { display: flex; flex-direction: column; gap: .25rem; align-items: flex-start; }
+.atm-photos img { width: 96px; height: 96px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }
+
+.atm-action-row { display: grid; grid-template-columns: 1fr 10rem auto; gap: .5rem; align-items: end; padding: .5rem 0; border-top: 1px solid var(--line); }
+.atm-action-row:first-child { border-top: none; }
+.atm-action-row textarea { min-height: 3rem; font-family: inherit; font-size: inherit; }
+
+.atm-save { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; background: var(--panel); border-top: 1px solid var(--line);
+  padding: .6rem 1rem; padding-bottom: max(.6rem, env(safe-area-inset-bottom)); }
+.atm-save > div { max-width: 760px; margin: 0 auto; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.atm-save .save-state { flex: 1 1 12rem; font-size: .85rem; color: var(--muted); }
+
+.atm-problems li a { color: var(--error); }
+.atm-search { margin-bottom: .6rem; }
+
+.toast { bottom: calc(5rem + env(safe-area-inset-bottom)); }
+
+@media (max-width: 560px) {
+  .atm-view { padding: .75rem .75rem 7rem; }
+  .level-cells[class*="cols-"] { grid-template-columns: 1fr; }
+  .atm-action-row { grid-template-columns: 1fr; }
+  .atm-save .save-state { flex-basis: 100%; }
+  .atm-save button { flex: 1; }
+}

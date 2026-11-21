@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Atmosphere</title>
+  <meta name="description" content="Observe colleagues against your Ecordiatlas rubrics, with or without a signal.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0b5cad">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Atmosphere">
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="/base.css">
+  <link rel="stylesheet" href="/atmosphere.css">
+  <script src="/store.js" defer></script>
+  <script src="/atmosphere.js" defer></script>
+</head>
+<body class="atm">
+  <a class="skip-link" href="#main">Skip to the main content</a>
+  <header class="atm-bar">
+    <a class="atm-brand" href="/" aria-label="Atmosphere, today's observations">
+      <img src="/icon.svg" alt="" width="28" height="28"><span>Atmosphere</span>
+    </a>
+    <span class="atm-signal" id="signal" role="status" aria-live="polite"></span>
+    <nav class="atm-nav" id="nav" aria-label="Atmosphere"></nav>
+  </header>
+  <main id="main" class="atm-view" tabindex="-1">
+    <p class="muted">Opening Atmosphere…</p>
+    <noscript><p>Atmosphere needs JavaScript switched on.</p></noscript>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
