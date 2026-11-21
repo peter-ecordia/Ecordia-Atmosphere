@@ -281,7 +281,7 @@
     S.screen = 'lock';
     const u = await A.getUser(S.user.userId);
     if (!u?.recovery) return setUpScreen();
-    const input = h('input', { type: 'password', autocomplete: 'current-password', inputmode: 'numeric', required: true, minlength: MIN_PASSCODE });
+    const input = h('input', { type: 'password', autocomplete: 'current-password', required: true, minlength: MIN_PASSCODE });
     const error = h('p', { class: 'field-msg error', role: 'alert' });
     const unlock = guard(async ev => {
       ev?.preventDefault();
@@ -306,9 +306,9 @@
   }
 
   function passcodeFields(withOld) {
-    const old = withOld ? h('input', { type: 'password', autocomplete: 'current-password', inputmode: 'numeric' }) : null;
-    const one = h('input', { type: 'password', autocomplete: 'new-password', inputmode: 'numeric', minlength: MIN_PASSCODE });
-    const two = h('input', { type: 'password', autocomplete: 'new-password', inputmode: 'numeric', minlength: MIN_PASSCODE });
+    const old = withOld ? h('input', { type: 'password', autocomplete: 'current-password' }) : null;
+    const one = h('input', { type: 'password', autocomplete: 'new-password', minlength: MIN_PASSCODE });
+    const two = h('input', { type: 'password', autocomplete: 'new-password', minlength: MIN_PASSCODE });
     const error = h('p', { class: 'field-msg error', role: 'alert' });
     const check = () => {
       error.textContent = '';
