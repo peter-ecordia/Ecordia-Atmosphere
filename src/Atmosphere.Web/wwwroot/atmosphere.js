@@ -116,6 +116,33 @@
     }
   };
 
+  // Redrawing the screen already showing (after Remove, Send now, the signal coming back) keeps the user on the same
+  // card, not back at the top (Peter, 21 Nov 2026: every button keeps the user looking at the same card).
+  // placeToKeep before the redraw, restorePlace after show(). Cards are matched by their heading; the button by its
+  // words and its place among buttons with the same words.
+  const words = el => (el?.textContent || '').replace(/\s+/g, ' ').trim();
+  const cardName = card => words(card.querySelector('h2, h3')).replace(/\d+/g, '#');
+  let lastPressed = null;
+  document.addEventListener('click', e => { lastPressed = e.target.closest?.('button') || lastPressed; }, true);
+  function placeToKeep() {
+    const main = $main();
+    const focused = main.contains(document.activeElement) ? document.activeElement : null;
+    const active = focused?.matches('button, a') ? focused : lastPressed && main.contains(lastPressed) ? lastPressed : null;
+    let card = active?.closest('.card');
+    if (!card) card = [...main.querySelectorAll('.card')].find(c => c.getBoundingClientRect().bottom > 0);
+    const same = card && active ? [...card.querySelectorAll('button, a')].filter(b => words(b) === words(active)) : [];
+    return { y: window.scrollY, card: card ? cardName(card) : null, top: card?.getBoundingClientRect().top, button: active ? words(active) : null, nth: same.indexOf(active) };
+  }
+  function restorePlace(keep) {
+    if (!keep) return;
+    const card = keep.card && [...$main().querySelectorAll('.card')].find(c => cardName(c) === keep.card);
+    if (!card) { window.scrollTo(0, keep.y); return; }
+    window.scrollBy(0, card.getBoundingClientRect().top - keep.top);
+    const same = keep.button ? [...card.querySelectorAll('button, a')].filter(b => words(b) === keep.button && !b.disabled) : [];
+    const target = same[Math.min(Math.max(keep.nth, 0), same.length - 1)] || card.querySelector('h2, h3');
+    if (target) { if (!same.length) target.tabIndex = -1; target.focus({ preventScroll: true }); }
+  }
+
   function show(...children) {
     for (const u of S.urls.splice(0)) URL.revokeObjectURL(u);
     const main = $main();
@@ -384,6 +411,7 @@
 
   // ------------------------------------------------------------------ home: today's observations
   async function home() {
+    const keep = S.screen === 'home' ? placeToKeep() : null;   // drawn again: stay on the same card
     S.screen = 'home';
     const userId = S.user.userId;
     const [packs, drafts, outbox, sent] = await Promise.all([A.packs(S.key, userId), A.drafts(S.key, userId), A.outbox(userId), A.sent(userId)]);
@@ -446,6 +474,7 @@
         h('div', { class: 'atm-actions' },
           h('button', { type: 'button', onclick: () => changePasscodeScreen() }, 'Change passcode'),
           h('button', { type: 'button', class: 'danger', onclick: guard(() => forgetDevice(outbox.length + inProgress.length)) }, 'Remove everything from this device'))));
+    restorePlace(keep);
   }
 
   async function forgetDevice(unsent) {
