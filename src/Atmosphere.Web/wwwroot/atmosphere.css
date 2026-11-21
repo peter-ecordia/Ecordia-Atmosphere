@@ -25,6 +25,7 @@ body.atm { margin: 0; min-height: 100vh; padding-bottom: env(safe-area-inset-bot
 .atm-list { list-style: none; margin: 0; padding: 0; }
 .atm-list > li { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; padding: .65rem 0; border-top: 1px solid var(--line); }
 .atm-list > li:first-child { border-top: none; }
+.atm-list > li[hidden] { display: none; }   /* (display: flex above would otherwise keep hidden rows on screen) */
 .atm-list .who { flex: 1 1 14rem; min-width: 0; }
 .atm-list .who strong { display: block; }
 .atm-list .who .muted { font-size: .88rem; }

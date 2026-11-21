@@ -37,7 +37,12 @@
         for (const name of ['packs', 'drafts', 'photos', 'outbox']) d.createObjectStore(name, { keyPath: 'id' }).createIndex('userId', 'userId');
         d.createObjectStore('sent', { keyPath: 'recordId' }).createIndex('userId', 'userId');
       };
-      r.onsuccess = () => resolve(r.result);
+      r.onsuccess = () => {
+        const d = r.result;
+        // Another tab or a newer version needs the database (an upgrade, or "Remove everything"): let go of it, never block it.
+        d.onversionchange = () => { d.close(); dbPromise = null; };
+        resolve(d);
+      };
       r.onerror = () => reject(r.error);
       r.onblocked = () => reject(new Error('Close Atmosphere in your other tabs, then try again.'));
     });

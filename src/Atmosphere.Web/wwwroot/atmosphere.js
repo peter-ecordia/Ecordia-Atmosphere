@@ -167,6 +167,7 @@
     else if (result.refused.length && !quiet) toast('Ecordiatlas couldn\'t accept an observation. See "Waiting to send".', true);
     if (result.needSignIn) S.signedIn = false;
     if (result.noSignal) setOnline(false);   // (Ecordiatlas couldn't be reached, whatever the phone says)
+    else if (result.sent.length) setOnline(true);
     if (S.key && S.screen === 'home') home();
   }
 
@@ -190,6 +191,9 @@
       else if (S.key) sendNow(true);
     });
     registerWorker();
+    // While Atmosphere is open and unlocked, anything waiting is tried again every minute (phones don't always say when
+    // the signal is back, and Ecordiatlas may have been the one out of reach).
+    setInterval(() => { if (S.key && navigator.onLine && !document.hidden) sendNow(true); }, 60000);
     // Where Ecordiatlas is: from this site's /config.json (the service worker's copy when there is no signal).
     try { const c = await (await fetch('/config.json')).json(); ATLAS = String(c.AtlasUrl || c.atlasUrl || '').replace(/\/+$/, ''); }
     catch { ATLAS = await A.atlasUrl(); }
@@ -262,6 +266,7 @@
   }
 
   async function lockScreen(message) {
+    started = true;
     S.screen = 'lock';
     const u = await A.getUser(S.user.userId);
     if (!u?.recovery) return setUpScreen();
@@ -765,6 +770,10 @@
     } finally { bitmap.close?.(); }
   }
 
+  // If the device's storage doesn't answer (another Atmosphere tab is holding it), say so rather than wait for ever.
+  let started = false;
+  setTimeout(() => { if (!started && $main().textContent.includes('Opening Atmosphere')) show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Atmosphere is still opening'),
+    h('p', {}, 'Close Atmosphere in your other tabs or windows, then try again.'), h('button', { type: 'button', class: 'primary', onclick: () => location.reload() }, 'Try again'))); }, 15000);
   document.addEventListener('DOMContentLoaded', () => boot().catch(e => {
     console.error(e);
     show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Atmosphere couldn\'t start'), h('p', {}, e.message || String(e))));
