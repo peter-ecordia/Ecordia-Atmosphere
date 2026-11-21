@@ -57,15 +57,23 @@
     return h('div', { class: 'field' }, h('label', { for: id }, label), control, hintEl);
   }
   let toastTimer = null;
+  // Confirmations fade (they repeat what the screen shows); errors stay until closed, so there is time to read them
+  // (WCAG 2.2.1), with a Close button and Escape.
   function toast(text, error) {
     const t = document.getElementById('toast');
-    t.textContent = text;
     t.className = 'toast' + (error ? ' error' : '');
     t.setAttribute('role', error ? 'alert' : 'status');
-    t.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, error ? 9000 : 5000);
+    if (error) {
+      const close = h('button', { type: 'button', class: 'small', onclick: () => { t.hidden = true; } }, 'Close', h('span', { class: 'sr-only' }, ' error message'));
+      t.replaceChildren(h('span', {}, text), close);
+    } else {
+      t.textContent = text;
+      toastTimer = setTimeout(() => { t.hidden = true; }, 5000);
+    }
+    t.hidden = false;
   }
+  document.addEventListener('keydown', e => { const t = document.getElementById('toast'); if (e.key === 'Escape' && t && !t.hidden && t.classList.contains('error')) t.hidden = true; });
   const todayLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const fmtDate = s => s ? new Date(s.length === 10 ? s + 'T12:00:00' : s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   const fmtTime = s => new Date(s).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -115,6 +123,9 @@
     window.scrollTo(0, 0);
     const heading = main.querySelector('h1');
     if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+    // Each screen names itself in the tab title (WCAG 2.4.2).
+    const name = heading?.textContent.trim();
+    document.title = name && name !== 'Atmosphere' ? `${name} - Atmosphere` : 'Atmosphere';
     drawNav();
   }
 
@@ -483,19 +494,26 @@
         h('span', { class: 'muted' }, ` ${fmtWhen(o.StartLocal)} · ${rubrics[o.RubricId].Name} · ${TYPES[o.Type] || o.Type}${o.Location ? ` · ${o.Location}` : ''}`))));
     });
 
-    const search = h('input', { type: 'search', placeholder: 'Search by name or role', class: 'atm-search', 'aria-label': 'Search people' });
+    const search = h('input', { type: 'search', placeholder: 'e.g. Sam or assessor' });
     const rows = st.People.map(p => {
       const options = st.Rubrics.filter(r => coversRole(r, p));
       const box = h('input', { type: 'checkbox', disabled: !options.length });
-      const select = h('select', { disabled: !options.length, 'aria-label': `Rubric for ${p.Name}` },
+      const select = h('select', { disabled: !options.length },
         options.length ? options.map(r => h('option', { value: r.Id }, `${r.Name} (version ${r.Version})`)) : h('option', {}, 'No rubric for this role'));
       select.addEventListener('change', () => { if (options.length) box.checked = true; });
       chosen.push({ box, staffId: p.Id, rubricId: () => select.value, observation: null });
       const li = h('li', { dataset: { find: `${p.Name} ${p.Role} ${p.JobTitle || ''}`.toLowerCase() } },
-        h('label', { class: 'pick' }, box, h('span', {}, h('strong', {}, p.Name), h('span', { class: 'muted' }, ` ${p.Role}${p.JobTitle && p.JobTitle !== p.Role ? ` · ${p.JobTitle}` : ''}`))), select);
+        h('label', { class: 'pick' }, box, h('span', {}, h('strong', {}, p.Name), h('span', { class: 'muted' }, ` ${p.Role}${p.JobTitle && p.JobTitle !== p.Role ? ` · ${p.JobTitle}` : ''}`))),
+        field(['Rubric', h('span', { class: 'sr-only' }, ` for ${p.Name}`)], select));   // a visible label (WCAG 3.3.2)
       return li;
     });
-    search.addEventListener('input', () => { const q = search.value.trim().toLowerCase(); rows.forEach(li => { li.hidden = !!q && !li.dataset.find.includes(q); }); });
+    // How many the search leaves, said to screen readers too (WCAG 4.1.3).
+    const found = h('p', { class: 'hint', role: 'status' });
+    search.addEventListener('input', () => {
+      const q = search.value.trim().toLowerCase();
+      rows.forEach(li => { li.hidden = !!q && !li.dataset.find.includes(q); });
+      found.textContent = q ? plural(rows.filter(li => !li.hidden).length, 'person', 'people') + ' found.' : '';
+    });
 
     const download = guard(async () => {
       const items = chosen.filter(c => c.box.checked).map(c => ({ StaffId: c.staffId, RubricId: c.rubricId(), ObservationId: c.observation?.Id || null, _o: c.observation }));
@@ -515,7 +533,7 @@
         h('ul', { class: 'atm-list atm-choose' }, planned)) : null,
       h('section', { class: 'card', 'aria-labelledby': 'h-people' }, h('h2', { id: 'h-people' }, planned.length ? 'Anyone else' : 'People you can observe'),
         st.Rubrics.length ? null : h('p', { class: 'notice-line' }, 'There are no published rubrics yet. Ask your quality lead to publish one in Ecordiatlas.'),
-        st.People.length > 8 ? search : null,
+        st.People.length > 8 ? h('div', { class: 'atm-search' }, field('Search by name or role', search), found) : null,
         st.People.length ? h('ul', { class: 'atm-list atm-choose' }, rows) : h('p', { class: 'muted' }, 'There is nobody you can observe.')),
       h('div', { class: 'atm-save' }, h('div', {},
         h('button', { type: 'button', class: 'primary', onclick: download }, 'Download'),
@@ -600,13 +618,15 @@
     const resultBox = h('div', { class: 'rubric-result', 'aria-live': 'polite' });
     const drawResult = () => {
       const r = resultOf(g, d.choices);
-      fill(resultBox, h('h2', {}, 'Overall result'),
+      const next = [h('h2', {}, 'Overall result'),
         g.Graded ? h('p', { class: 'result-line' }, r.band ? h('strong', {}, r.band) : h('span', { class: 'muted' }, 'No band yet'), r.score != null ? ` · score ${Math.round(r.score * 100) / 100}` : '')
           : h('p', {}, 'Not graded: a level and comments for each criterion.'),
         r.missing ? h('p', { class: 'hint' }, `${r.missing} criteri${r.missing === 1 ? 'on' : 'a'} still to do.`) : h('p', { class: 'hint' }, 'Every criterion has a level.'),
         r.lowestHit || r.belowBand ? h('p', { class: 'notice-line' }, h('span', { class: 'pill warn' }, 'Action needed'), ' ',
           [r.lowestHit ? `a criterion is at the lowest level (${r.lowestLabel})` : null, r.belowBand ? `the result is below ${g.Triggers.BelowBand}` : null].filter(Boolean).join(' and '),
-          ': agree at least one action below.') : null);
+          ': agree at least one action below.') : null].filter(Boolean);
+      // A live region: only replaced when the result changes, so typing a comment doesn't read the result out again.
+      if (next.map(n => n.textContent).join('|') !== [...resultBox.children].map(n => n.textContent).join('|')) fill(resultBox, next);
     };
 
     // Photos: shrunk and stripped of their location (as every upload), then encrypted on the device.
@@ -684,11 +704,11 @@
 
     const actionsBox = h('div', { id: 'c-actions' });
     const drawActions = () => fill(actionsBox, ...d.actions.map((a, i) => {
-      const text = h('textarea', { maxlength: 1000, 'aria-label': `Action ${i + 1}` }, a.text);
+      const text = h('textarea', { maxlength: 1000 }, a.text);
       text.addEventListener('input', () => { a.text = text.value; changed(); });
-      const due = h('input', { type: 'date', value: a.dueDate, min: todayLocal(), 'aria-label': `Action ${i + 1} due date` });
+      const due = h('input', { type: 'date', value: a.dueDate, min: todayLocal() });
       due.addEventListener('change', () => { a.dueDate = due.value; changed(); });
-      return h('div', { class: 'atm-action-row' }, text, due, h('button', { type: 'button', class: 'small', onclick: () => { d.actions.splice(i, 1); drawActions(); changed(); } }, 'Remove', h('span', { class: 'sr-only' }, ` action ${i + 1}`)));
+      return h('div', { class: 'atm-action-row' }, field(`Action ${i + 1}`, text), field(`Action ${i + 1} due by`, due), h('button', { type: 'button', class: 'small', onclick: () => { d.actions.splice(i, 1); drawActions(); changed(); } }, 'Remove', h('span', { class: 'sr-only' }, ` action ${i + 1}`)));
     }));
     drawActions();
 

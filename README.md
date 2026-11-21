@@ -63,6 +63,22 @@ Atmosphere has no sign-in of its own: it calls Ecordiatlas's API with the person
 
 And in Ecordiatlas: `Atmosphere:Url` = this site's address, e.g. `https://atmosphere.ecordia.co.uk`.
 
+## Accessibility (WCAG 2.2 AA)
+
+Atmosphere is built to WCAG 2.2 AA, like Ecordiatlas, in light and dark (it follows the device) and down to 320px wide:
+
+- skip link, one `h1` per screen, focus moved to it, and the tab title names the screen
+- every control has a visible label (the people search, each person's rubric, each action and its due date); criteria
+  are fieldsets with the criterion as the legend; level cards are radio buttons
+- control edges are 2px and at least 3:1 in both themes: fields, buttons, the photo buttons, tick boxes and radio buttons
+  (drawn by `base.css`, not the browser) and the rubric level cards
+- status messages are announced: the signal, saving, how many people a search finds, and the overall result (only when
+  it changes, not on every keystroke in a comment); errors stay on screen until closed (Close or Escape)
+- the passcode boxes work with password managers and paste (`autocomplete`), so nothing has to be remembered
+  and retyped (3.3.8)
+
+`base.css` is a copy of Ecordiatlas's look, so a change to its controls there should be copied here too.
+
 ## Running it on this computer
 
 1. Run Ecordiatlas with `Atmosphere__Url=http://localhost:5285` (its `appsettings.Development.json` already says so).

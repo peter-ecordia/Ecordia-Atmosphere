@@ -1,4 +1,4 @@
-/* Copied from Ecordiatlas's app.css (21 Nov 2026) so Atmosphere looks the same as Ecordiatlas: colour tokens for
+/* Copied from Ecordiatlas's app.css (21 Nov 2026; WCAG 2.2 AA control edges, tick boxes and level edges brought across the same day) so Atmosphere looks the same as Ecordiatlas: colour tokens for
    light and dark, base elements, controls, cards, pills, the toast and the rubric level cells. Copy changes across
    when Ecordiatlas's look changes. Atmosphere's own layout is in atmosphere.css. */
 
@@ -123,7 +123,7 @@ h3 { font-size: 1rem; margin: 1rem 0 .5rem; }
 .toolbar .grow { flex: 1; }
 .toolbar.top { align-items: flex-start; }
 .btn, button {
-    font: inherit; padding: .45rem .9rem; border-radius: 6px; border: 1px solid var(--button-border);
+    font: inherit; padding: calc(.45rem - 1px) calc(.9rem - 1px); border-radius: 6px; border: 2px solid var(--button-border);   /* 2px: checkers ignore a 1px edge (WCAG 1.4.11) */
     background: var(--panel); color: var(--ink); cursor: pointer; text-decoration: none; display: inline-block;
     min-height: 2.25rem; line-height: 1.2;
 }
@@ -131,11 +131,33 @@ h3 { font-size: 1rem; margin: 1rem 0 .5rem; }
 .btn.primary:hover, button.primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
 .btn.primary, button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 button.danger { color: var(--error); border-color: var(--error); }
-button.small { padding: .25rem .6rem; font-size: .85rem; min-height: 24px; min-width: 24px; }   /* WCAG 2.5.8 target size */
+button.small { padding: calc(.25rem - 1px) calc(.6rem - 1px); font-size: .85rem; min-height: 24px; min-width: 24px; }   /* WCAG 2.5.8 target size */
 button:disabled { opacity: .55; cursor: not-allowed; }
 input, select, textarea { font: inherit; padding: .35rem .5rem; border: 2px solid var(--control-border); border-radius: 6px; background: var(--input-bg); color: var(--ink); width: 100%; min-height: 2.25rem; }
 input[type=file] { border: none; padding-left: 0; min-height: 0; }
-input[type=checkbox], input[type=radio] { border: none; padding: 0; }
+/* The file picker's own button looks like the other buttons, with the same 2px edge (WCAG 1.4.11). */
+input[type=file]::file-selector-button { font: inherit; padding: calc(.45rem - 1px) calc(.9rem - 1px); margin-right: .6rem; border-radius: 6px;
+    border: 2px solid var(--button-border); background: var(--panel); color: var(--ink); cursor: pointer; min-height: 2.25rem; }
+input[type=file]:hover::file-selector-button { background: var(--btn-hover); }
+/* Tick boxes and radio buttons are drawn here rather than by the browser, so their edge is 2px and at least 3:1 in both
+   themes (the browser's own is 1px and does not follow the theme; WCAG 1.4.11). The tick is 6.7:1 (light) / 8.7:1 (dark).
+   .sr-radio (rubric level cards) stays hidden: the card is the visible control. */
+input[type=checkbox]:not(.sr-radio), input[type=radio]:not(.sr-radio) {
+    appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; flex: none; vertical-align: middle;
+    width: 1.15rem; height: 1.15rem; min-height: 0; margin: 0; padding: 0; border: 2px solid var(--control-border); border-radius: 4px;
+    background: var(--input-bg); cursor: pointer; }
+input[type=radio]:not(.sr-radio) { border-radius: 50%; }
+input[type=checkbox]:not(.sr-radio)::before { content: ""; width: .7rem; height: .7rem; background: var(--accent-ink); transform: scale(0);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }
+input[type=checkbox]:not(.sr-radio):checked, input[type=checkbox]:not(.sr-radio):indeterminate { background: var(--accent); border-color: var(--accent); }
+input[type=checkbox]:not(.sr-radio):checked::before { transform: scale(1); }
+input[type=checkbox]:not(.sr-radio):indeterminate::before { transform: scale(1); clip-path: inset(38% 8%); }
+input[type=radio]:not(.sr-radio)::before { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: var(--accent); transform: scale(0); }
+input[type=radio]:not(.sr-radio):checked { border-color: var(--accent); }
+input[type=radio]:not(.sr-radio):checked::before { transform: scale(1); }
+input[type=checkbox]:not(.sr-radio):disabled, input[type=radio]:not(.sr-radio):disabled { opacity: .55; cursor: not-allowed; }
+input[type=checkbox]:focus-visible, input[type=radio]:focus-visible { outline-offset: 2px; }
+@media (forced-colors: active) { input[type=checkbox]:not(.sr-radio), input[type=radio]:not(.sr-radio) { appearance: auto; -webkit-appearance: auto; } }
 input:disabled, select:disabled, textarea:disabled { background: var(--disabled-bg); color: var(--disabled-ink); }
 ::placeholder { color: var(--placeholder); opacity: 1; }   /* 4.7:1 light, 5.6:1 dark */
 textarea { min-height: 12rem; font-family: ui-monospace, Consolas, monospace; font-size: .85rem; }
@@ -163,11 +185,12 @@ textarea.short-text { min-height: 4rem; font-family: inherit; font-size: inherit
 .toast.error :focus-visible { outline-color: var(--alert-ink); }
 
 /* Staff rubrics (rubrics.js). Level colours are a fixed set: each pair is at least 4.5:1 in both themes, and the
-   level's label is always shown, so colour is never the only cue. */
+   level's label is always shown, so colour is never the only cue. Each edge is at least 3:1 against its own fill and the
+   card behind it (a level card is a control: WCAG 1.4.11). */
 :root {
     --lvl-red-bg: #fde4e1; --lvl-red-ink: #8c1d13; --lvl-red-edge: #c9473b;
-    --lvl-amber-bg: #fdebd3; --lvl-amber-ink: #7a4100; --lvl-amber-edge: #c27a1c;
-    --lvl-yellow-bg: #fbf3c4; --lvl-yellow-ink: #5c4d00; --lvl-yellow-edge: #b39a12;
+    --lvl-amber-bg: #fdebd3; --lvl-amber-ink: #7a4100; --lvl-amber-edge: #a86a12;
+    --lvl-yellow-bg: #fbf3c4; --lvl-yellow-ink: #5c4d00; --lvl-yellow-edge: #8f7a00;
     --lvl-green-bg: #dcf1e4; --lvl-green-ink: #135c38; --lvl-green-edge: #2f8a5a;
     --lvl-teal-bg: #d5efee; --lvl-teal-ink: #0f5552; --lvl-teal-edge: #2a8783;
     --lvl-blue-bg: #dce9fa; --lvl-blue-ink: #0b4a8a; --lvl-blue-edge: #2f6fbd;
@@ -209,7 +232,7 @@ fieldset.criterion > legend + * { clear: left; }
 .level-cells.cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .level-cells.cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .level-cells.cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.level-cell { display: flex; flex-direction: column; gap: .25rem; padding: .55rem .65rem; border-radius: var(--radius); background: var(--lb); color: var(--li); border: 1px solid var(--le); border-left-width: 6px; cursor: pointer; min-height: 44px; }
+.level-cell { display: flex; flex-direction: column; gap: .25rem; padding: .55rem .65rem; border-radius: var(--radius); background: var(--lb); color: var(--li); border: 2px solid var(--le); border-left-width: 6px; cursor: pointer; min-height: 44px; }
 .level-cell .level-name { font-weight: 650; }
 .level-cell .level-desc { font-size: .88rem; color: var(--ink); }
 .level-cell .level-desc.muted { color: var(--muted); }
