@@ -748,6 +748,8 @@
     course.addEventListener('input', () => { d.courseKey = course.value.trim(); changed(); });
     const summary = h('textarea', { maxlength: 4000, class: 'short-text' }, d.summary || '');
     summary.addEventListener('input', () => { d.summary = summary.value; changed(); });
+    const learnerVoice = h('textarea', { maxlength: 2000, class: 'short-text' }, d.learnerVoice || '');
+    learnerVoice.addEventListener('input', () => { d.learnerVoice = learnerVoice.value; changed(); });
 
     const actionsBox = h('div', { id: 'c-actions' });
     const drawActions = () => fill(actionsBox, ...d.actions.map((a, i) => {
@@ -803,6 +805,7 @@
       h('div', { class: 'card' }, resultBox),
       g.Sections.map(sec => h('section', { class: 'card rubric-section' }, h('h2', {}, sec.Title), sec.Criteria.map(criterionBlock))),
       h('div', { class: 'card' }, h('h2', {}, 'Overall comments'), field('Overall comments', summary),
+        field('Learner voice', learnerVoice, 'Ask a learner or two: what did you learn today? Do you know who to tell if something worries you? Note what they said.'),
         h('h3', {}, 'Photos for the whole observation'), photoList(null), photoButtons(null, null)),
       h('div', { class: 'card' }, h('h2', {}, 'Actions'),
         h('p', { class: 'hint' }, 'Development steps agreed with the staff member. They go into their development plan in Ecordiatlas.'),

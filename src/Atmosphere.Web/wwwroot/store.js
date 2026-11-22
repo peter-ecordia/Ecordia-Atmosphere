@@ -215,7 +215,7 @@
         .map(([CriterionId, c]) => ({ CriterionId, LevelId: c.level || null, NotSeen: !!c.notSeen && !c.level, Comment: c.comment || null })),
       Actions: d.actions.filter(a => a.text.trim() && a.dueDate).map(a => ({ Text: a.text.trim(), DueDate: a.dueDate })),
       Photos: d.photos.map(p => ({ CriterionId: p.criterionId || null, Name: p.name, Key: p.key, Iv: p.iv })),
-      StartedUtc: d.startedAt
+      StartedUtc: d.startedAt, LearnerVoice: d.learnerVoice || null
     };
   }
 
