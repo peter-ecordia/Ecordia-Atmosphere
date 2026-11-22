@@ -417,10 +417,13 @@
     let [packs, drafts, outbox, sent] = await Promise.all([A.packs(S.key, userId), A.drafts(S.key, userId), A.outbox(userId), A.sent(userId)]);
     if (S.screen !== 'home') return;
     const draftById = Object.fromEntries(drafts.map(d => [d.id, d]));
-    const label = d => d?.draft ? (d.draft.visit ? visitTitle(d.draft) : `${d.draft.staffName}`) : 'An observation';
-    const sub = d => d?.draft ? (d.draft.visit ? `Visit check · ${fmtDate(d.draft.visitedOn)}` : `${d.draft.rubricName} · ${fmtDate(d.draft.observedOn)}`) : '';
+    const label = d => d?.draft ? (d.draft.register ? `Register: ${d.draft.title}` : d.draft.visit ? visitTitle(d.draft) : `${d.draft.staffName}`) : 'An observation';
+    const sub = d => d?.draft ? (d.draft.register ? fmtWhen(d.draft.start) : d.draft.visit ? `Visit check · ${fmtDate(d.draft.visitedOn)}` : `${d.draft.rubricName} · ${fmtDate(d.draft.observedOn)}`) : '';
+    const screenFor = d => (d.draft.register ? registerScreen : d.draft.visit ? visitScreen : observe);
     const visitPack = packs.find(p => p.item.Visit);
-    packs = packs.filter(p => !p.item.Visit);
+    const registerPack = packs.find(p => p.item.Registers);
+    packs = packs.filter(p => !p.item.Visit && !p.item.Registers);
+    const started = new Set(drafts.filter(d => d.draft?.register).map(d => d.draft.sessionId));
 
     const waiting = outbox.map(o => {
       const d = draftById[o.id];
@@ -433,7 +436,7 @@
         status,
         o.status === 'refused' ? h('div', { class: 'errors' }, h('p', {}, o.error), o.errors?.length > 1 ? h('ul', {}, o.errors.map(e => h('li', {}, e))) : null,
           h('div', { class: 'atm-actions' },
-            o.kind === 'submit' && d?.draft ? h('button', { type: 'button', class: 'small', onclick: guard(async () => { await A.backToDraft(o.id); (d.draft.visit ? visitScreen : observe)(o.id); }) }, 'Back to the draft') : null,
+            o.kind === 'submit' && d?.draft ? h('button', { type: 'button', class: 'small', onclick: guard(async () => { await A.backToDraft(o.id); screenFor(d)(o.id); }) }, 'Back to the draft') : null,
             h('button', { type: 'button', class: 'small danger', onclick: guard(async () => {
               if (!confirm('Remove this observation from this device? It hasn\'t reached Ecordiatlas, so it will be lost.')) return;
               await A.removeDraft(o.id);
@@ -443,7 +446,7 @@
 
     const inProgress = drafts.filter(d => d.state === 'draft').sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(d => h('li', {},
       h('div', { class: 'who' }, h('strong', {}, label(d)), h('span', { class: 'muted' }, `${sub(d)} · kept here until ${fmtDate(d.keepUntil)}`)),
-      d.draft ? h('button', { type: 'button', class: 'primary', onclick: () => (d.draft.visit ? visitScreen : observe)(d.id) }, 'Continue', h('span', { class: 'sr-only' }, ` ${label(d)}`)) : h('span', { class: 'muted' }, 'Can\'t be opened with this passcode')));
+      d.draft ? h('button', { type: 'button', class: 'primary', onclick: () => screenFor(d)(d.id) }, 'Continue', h('span', { class: 'sr-only' }, ` ${label(d)}`)) : h('span', { class: 'muted' }, 'Can\'t be opened with this passcode')));
 
     const ready = packs.sort((a, b) => (a.item.PlannedStart || '').localeCompare(b.item.PlannedStart || '') || a.item.StaffName.localeCompare(b.item.StaffName)).map(p => h('li', {},
       h('div', { class: 'who' }, h('strong', {}, p.item.StaffName),
@@ -467,6 +470,12 @@
         S.online && S.signedIn && outbox.some(o => o.status !== 'refused') ? h('button', { type: 'button', onclick: guard(() => sendNow(false)) }, 'Send now') : null) : null,
       inProgress.length ? h('section', { class: 'card', 'aria-labelledby': 'h-progress' }, h('h2', { id: 'h-progress' }, 'In progress'), h('ul', { class: 'atm-list' }, inProgress),
         h('p', { class: 'hint' }, `Only you can see these, on this device. A draft not submitted within ${A.KEEP_DAYS} days is sent to Ecordiatlas unfinished, and the staff member's manager is told.`)) : null,
+      h('section', { class: 'card', 'aria-labelledby': 'h-registers' }, h('h2', { id: 'h-registers' }, 'Registers'),
+        h('p', { class: 'hint' }, 'Take the register for your sessions with no signal (on an employer\'s site, say). Download this week\'s sessions first while you have one.'),
+        registerPack ? h('ul', { class: 'atm-list' }, registerPack.item.Sessions.filter(s => !started.has(s.SessionId)).map(s => h('li', {},
+          h('div', { class: 'who' }, h('strong', {}, s.Title), h('span', { class: 'muted' }, `${fmtWhen(s.Start)}${s.Room ? ` · ${s.Room}` : ''} · ${plural(s.Learners.length, 'learner')}`)),
+          h('button', { type: 'button', class: 'primary', onclick: guard(() => startRegister(s, registerPack.item.Reasons)) }, 'Take the register', h('span', { class: 'sr-only' }, ` for ${s.Title}`))))) : null,
+        h('button', { type: 'button', disabled: !canPrepare, onclick: guard(downloadRegisters) }, registerPack ? 'Download again' : 'Download my sessions')),
       h('section', { class: 'card', 'aria-labelledby': 'h-visits' }, h('h2', { id: 'h-visits' }, 'Visit checks'),
         h('p', { class: 'hint' }, 'Check a workplace, or audit a subcontractor, with no signal. Download your employers first while you have one.'),
         visitPack ? h('p', { class: 'muted' }, `${plural(visitPack.item.Employers.length, 'employer')}${visitPack.item.Subcontractors.length ? `, ${plural(visitPack.item.Subcontractors.length, 'subcontractor')}` : ''} on this device, downloaded ${fmtWhen(visitPack.packedAt)}.`) : null,
@@ -907,6 +916,88 @@
         : h('section', { class: 'card' }, h('h2', {}, 'Findings and actions'), field('Findings', text('findings', 4)), field('Actions agreed', text('actions', 3)),
             field('Actions due by', bind(h('input', { type: 'date', value: d.actionsDueOn || '' }), 'actionsDueOn'))),
       h('div', { class: 'card' }, h('button', { type: 'button', class: 'danger', onclick: remove }, 'Delete this visit')),
+      h('div', { class: 'atm-save' }, h('div', {}, saveState, h('button', { type: 'button', class: 'primary', onclick: submit }, 'Submit to Ecordiatlas'))));
+  }
+
+  // ------------------------------------------------------------------ registers offline (in Ecordiatlas: SessionService.RegisterAsync)
+  const MARKS = [['present', 'Present'], ['late', 'Late'], ['authorised', 'Absent with a reason'], ['absent', 'Absent, no reason']];
+
+  async function downloadRegisters() {
+    const pack = await api('GET', '/api/v1/atmosphere/register-pack');
+    if (!(await A.serverKey())) await A.saveServerKey(await api('GET', '/api/v1/atmosphere/visit-key'));
+    await A.saveRegisterPack(S.key, S.user, pack, new Date().toISOString());
+    toast(`Downloaded ${plural(pack.Sessions.length, 'session')}.`);
+    home();
+  }
+
+  async function startRegister(s, reasons) {
+    const d = {
+      id: A.uuid(), register: true, sessionId: s.SessionId, title: s.Title, start: s.Start, end: s.End, room: s.Room, reasons,
+      learners: s.Learners.map(l => ({ id: l.LearnerId, name: l.Name, mark: l.Mark || 'present', reason: l.Reason || '', note: '' })),
+      photos: [], startedAt: new Date().toISOString()
+    };
+    await A.saveDraft(S.key, S.user, d);
+    registerScreen(d.id);
+  }
+
+  async function registerScreen(id) {
+    S.screen = 'register';
+    const row = await A.draft(S.key, id);
+    if (!row?.draft) { toast('That register isn\'t on this device any more.', true); return home(); }
+    if (row.state !== 'draft') { toast('That register has been submitted, so it can\'t be changed here.', true); return home(); }
+    const d = row.draft, key = S.key;
+    let timer = null, saving = Promise.resolve();
+    const saveState = h('span', { class: 'save-state', role: 'status' }, `Saved on this device ${fmtTime(row.updatedAt)}, encrypted.`);
+    const save = () => {
+      clearTimeout(timer);
+      saving = saving.then(async () => {
+        try { await A.saveDraft(key, S.user, d); saveState.textContent = `Saved on this device ${fmtTime(d.updatedAt)}, encrypted.`; }
+        catch (e) { saveState.textContent = `Not saved: ${e.message}`; }
+      });
+      return saving;
+    };
+    const changed = () => { saveState.textContent = 'Saving…'; clearTimeout(timer); timer = setTimeout(save, 500); };
+    const flush = () => { if (timer) save(); };
+    document.addEventListener('visibilitychange', flush, { once: true });
+    const rows = d.learners.map(l => {
+      const mark = h('select', { 'aria-label': `Mark for ${l.name}` }, MARKS.map(([k, t]) => h('option', { value: k, selected: l.mark === k }, t)));
+      const reason = h('select', { 'aria-label': `Reason for ${l.name}` }, h('option', { value: '' }, 'Choose the reason…'), Object.entries(d.reasons || {}).map(([k, t]) => h('option', { value: k, selected: l.reason === k }, t)));
+      const note = h('input', { maxlength: 300, value: l.note || '', 'aria-label': `Note for ${l.name}`, placeholder: 'Note (optional)' });
+      const show = () => { reason.hidden = mark.value !== 'authorised'; };
+      mark.addEventListener('change', () => { l.mark = mark.value; show(); changed(); });
+      reason.addEventListener('change', () => { l.reason = reason.value; changed(); });
+      note.addEventListener('input', () => { l.note = note.value; changed(); });
+      show();
+      return h('li', { class: 'atm-check' }, h('span', {}, l.name), mark, reason, note);
+    });
+    const problems = h('div', { role: 'alert' });
+    const submit = guard(async () => {
+      if (new Date(d.start) > new Date()) { fill(problems, h('p', { class: 'errors' }, 'The register can be submitted once the session has started.')); return; }
+      const missing = d.learners.filter(l => l.mark === 'authorised' && !l.reason);
+      if (missing.length) { fill(problems, h('div', { class: 'errors' }, h('p', {}, `Choose the reason for: ${missing.map(l => l.name).join(', ')}.`))); return; }
+      fill(problems);
+      await save();
+      if (!confirm(`Submit the register for ${d.title}? It goes to Ecordiatlas.`)) return;
+      await A.submit(S.user, d);
+      askBackgroundSend();
+      toast(navigator.onLine ? 'Submitted. Sending to Ecordiatlas…' : 'Submitted. It will be sent to Ecordiatlas when you have a signal.');
+      await home();
+      sendNow(false);
+    });
+    const remove = guard(async () => {
+      if (!confirm('Delete this register from this device? It hasn\'t been sent, so it will be lost.')) return;
+      clearTimeout(timer);
+      await A.removeDraft(d.id);
+      toast('Register deleted.');
+      home();
+    });
+    show(
+      h('p', {}, h('a', { href: '/', onclick: ev => { ev.preventDefault(); flush(); home(); } }, '← Today\'s observations')),
+      h('h1', {}, `Register: ${d.title}`),
+      h('p', { class: 'muted' }, `${fmtWhen(d.start)}${d.room ? ` · ${d.room}` : ''}. Everyone starts as present: change anyone who isn't.`),
+      problems,
+      h('section', { class: 'card' }, h('ul', { class: 'atm-list atm-checks' }, rows)),
+      h('div', { class: 'card' }, h('button', { type: 'button', class: 'danger', onclick: remove }, 'Delete this register')),
       h('div', { class: 'atm-save' }, h('div', {}, saveState, h('button', { type: 'button', class: 'primary', onclick: submit }, 'Submit to Ecordiatlas'))));
   }
 

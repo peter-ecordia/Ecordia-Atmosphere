@@ -11,7 +11,7 @@
 */
 importScripts('store.js');
 
-const CACHE = 'atmosphere-v3';
+const CACHE = 'atmosphere-v4';
 const SHELL = ['/', '/atmosphere.js', '/store.js', '/base.css', '/atmosphere.css', '/theme.js', '/config.json', '/manifest.json',
   '/icon.svg', '/icon-192.png', '/icon-512.png'];
 const NETWORK_WAIT_MS = 4000;

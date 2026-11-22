@@ -232,7 +232,20 @@
       LearnersSpokenTo: d.learnersSpokenTo === '' || d.learnersSpokenTo == null ? null : Number(d.learnersSpokenTo)
     };
   }
-  const payload = (d, kind, user) => (d.visit ? visit(d, kind, user) : observation(d, kind, user));
+  /** A register taken offline (AtmosphereRegister in Ecordiatlas): Purpose "register". */
+  function register(d, kind, user) {
+    return {
+      V: 1, Purpose: 'register', Kind: kind, Id: d.id, UserId: user.userId, TenantId: user.tenantId, SessionId: d.sessionId,
+      Marks: d.learners.filter(l => l.mark).map(l => ({ LearnerId: l.id, Mark: l.mark, Reason: l.mark === 'authorised' ? (l.reason || null) : null, Note: l.note || null }))
+    };
+  }
+  const payload = (d, kind, user) => (d.register ? register(d, kind, user) : d.visit ? visit(d, kind, user) : observation(d, kind, user));
+
+  /** The sessions to take registers for, encrypted like the other downloads. */
+  async function saveRegisterPack(key, user, item, packedAt) {
+    const keepUntil = new Date(new Date(packedAt).getTime() + KEEP_DAYS * DAY).toISOString();
+    await put('packs', { id: `${user.userId}|registers`, userId: user.userId, tenantId: user.tenantId, packedAt, keepUntil, box: await lock(key, { ...item, Registers: true }) });
+  }
 
   /** The visit checklists, employers and subcontractors, encrypted like the rubric packs (one per person). */
   async function saveVisitPack(key, user, item, packedAt) {
@@ -395,7 +408,7 @@
 
   root.Atmosphere = {
     KEEP_DAYS, deviceId, atlasUrl, saveAtlasUrl, serverKey, saveServerKey, getUser, saveProfile, lastUser, setLastUser, setUpUser, unlock, setPasscodeFromRecovery, changePasscode,
-    savePack, saveVisitPack, packs, removePack, saveDraft, drafts, draft, removeDraft, savePhoto, photoUrl, removePhoto, submit, backToDraft, expire, outbox, sent,
+    savePack, saveVisitPack, saveRegisterPack, packs, removePack, saveDraft, drafts, draft, removeDraft, savePhoto, photoUrl, removePhoto, submit, backToDraft, expire, outbox, sent,
     sendOutbox, forget, uuid
   };
 })(typeof self !== 'undefined' ? self : window);

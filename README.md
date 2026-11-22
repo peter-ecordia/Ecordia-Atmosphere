@@ -41,6 +41,13 @@ endpoint as observations, marked `Purpose: "visit"` (workplace: employer, appren
 date, checks, learners spoken to, findings, actions and due date). It arrives on the employer's page or the Safeguarding
 page's Subcontractors in Ecordiatlas. No Staff rubrics add-on is needed for visits.
 
+## Registers offline (attendance)
+
+*Download my sessions* on the home screen fetches the person's sessions from yesterday to a week ahead (everyone's for
+Admins and Editors) with their learners (`GET /api/v1/atmosphere/register-pack`). *Take the register* marks each learner
+present, late, absent with a reason or absent with no reason, offline and encrypted; it is sent sealed through the same
+outbox (`Purpose: "register"`) and saved in Ecordiatlas as the session's register (`SessionService.RegisterAsync`).
+
 ## Sign-in
 
 Atmosphere has no sign-in of its own: it calls Ecordiatlas's API with the person's Ecordiatlas sign-in. For that:
