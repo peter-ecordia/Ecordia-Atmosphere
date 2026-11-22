@@ -219,11 +219,32 @@
     };
   }
 
+  /**
+   * What Ecordiatlas receives for a visit check (AtmosphereVisit, safeguarding at work): Purpose "visit", Type
+   * "workplace" or "subcontractor". It travels through the same outbox and endpoint as observations.
+   */
+  function visit(d, kind, user) {
+    return {
+      V: 1, Purpose: 'visit', Kind: kind, Type: d.type, Id: d.id, UserId: user.userId, TenantId: user.tenantId, EmpId: d.empId ? Number(d.empId) : null,
+      LearnerId: d.learnerId || null, SubTenantId: d.subId || null, VisitedOn: d.visitedOn,
+      Checks: Object.entries(d.checks).filter(([, a]) => a).map(([Key, Answer]) => ({ Key, Answer, Note: null })),
+      Notes: d.notes || null, Findings: d.findings || null, Actions: d.actions || null, ActionsDueOn: d.actionsDueOn || null,
+      LearnersSpokenTo: d.learnersSpokenTo === '' || d.learnersSpokenTo == null ? null : Number(d.learnersSpokenTo)
+    };
+  }
+  const payload = (d, kind, user) => (d.visit ? visit(d, kind, user) : observation(d, kind, user));
+
+  /** The visit checklists, employers and subcontractors, encrypted like the rubric packs (one per person). */
+  async function saveVisitPack(key, user, item, packedAt) {
+    const keepUntil = new Date(new Date(packedAt).getTime() + KEEP_DAYS * DAY).toISOString();
+    await put('packs', { id: `${user.userId}|visits`, userId: user.userId, tenantId: user.tenantId, packedAt, keepUntil, box: await lock(key, { ...item, Visit: true }) });
+  }
+
   /** Saves a draft: encrypted for the device, and sealed to the server in case it is still here in 14 days. */
   async function saveDraft(key, user, d) {
     const pub = await serverKey();
     const existing = await get('drafts', d.id);
-    const escrow = await seal(json(observation(d, 'unfinished', user)), pub);
+    const escrow = await seal(json(payload(d, 'unfinished', user)), pub);
     d.updatedAt = new Date().toISOString();
     await put('drafts', {
       id: d.id, userId: user.userId, tenantId: user.tenantId, createdAt: existing?.createdAt || d.startedAt, updatedAt: d.updatedAt,
@@ -274,7 +295,7 @@
   // ------------------------------------------------------------------ submitting and sending
   /** Submit: sealed for Ecordiatlas and put in the outbox. The draft stays (locked) until Ecordiatlas has it. */
   async function submit(user, d) {
-    const sealed = await seal(json(observation(d, 'submit', user)), await serverKey());
+    const sealed = await seal(json(payload(d, 'submit', user)), await serverKey());
     const row = await get('drafts', d.id);
     await tx(['drafts', 'outbox'], 'readwrite', (ds, os) => {
       ds.put({ ...row, state: 'sending' });
@@ -340,7 +361,7 @@
             os.delete(item.id);
             ds.delete(item.id);
             for (const p of item.photoIds) ps.delete(p);
-            ss.put({ recordId: body.RecordId, userId: item.userId, tenantId: item.tenantId, sentAt: new Date().toISOString(), unfinished: !!body.Unfinished, draftId: item.id });
+            ss.put({ recordId: body.RecordId, userId: item.userId, tenantId: item.tenantId, sentAt: new Date().toISOString(), unfinished: !!body.Unfinished, draftId: item.id, link: body.Link || null });
           });
           result.sent.push({ id: item.id, recordId: body.RecordId, unfinished: !!body.Unfinished });
           continue;
@@ -374,7 +395,7 @@
 
   root.Atmosphere = {
     KEEP_DAYS, deviceId, atlasUrl, saveAtlasUrl, serverKey, saveServerKey, getUser, saveProfile, lastUser, setLastUser, setUpUser, unlock, setPasscodeFromRecovery, changePasscode,
-    savePack, packs, removePack, saveDraft, drafts, draft, removeDraft, savePhoto, photoUrl, removePhoto, submit, backToDraft, expire, outbox, sent,
+    savePack, saveVisitPack, packs, removePack, saveDraft, drafts, draft, removeDraft, savePhoto, photoUrl, removePhoto, submit, backToDraft, expire, outbox, sent,
     sendOutbox, forget, uuid
   };
 })(typeof self !== 'undefined' ? self : window);

@@ -65,3 +65,8 @@ body.atm { margin: 0; min-height: 100vh; padding-bottom: env(safe-area-inset-bot
   .atm-save .save-state { flex-basis: 100%; }
   .atm-save button { flex: 1; }
 }
+
+/* Visit checks: each check's wording with its answer beside it (stacks on a phone) */
+.atm-checks .atm-check { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; justify-content: space-between; }
+.atm-checks .atm-check > span { flex: 1 1 16rem; }
+.atm-checks .atm-check select { min-height: 44px; min-width: 9rem; }

@@ -31,6 +31,16 @@ characters; it locks after 5 minutes away). What is waiting to be sent is sealed
 phone can't read it back and the browser can send it in the background. *Forgotten your passcode?* unlocks after
 signing in to Ecordiatlas again.
 
+## Visit checks (safeguarding at work)
+
+Atmosphere also does **workplace visits** and **subcontractor audits** offline (Ecordiatlas: *Safeguarding at work*,
+`Services/SafeguardingWorkService.cs`). *Download employers* on the home screen fetches the checklists, the employers of the
+person's learners with their learners and, for admins, the subcontractors (`GET /api/v1/atmosphere/visit-pack`), kept encrypted
+like rubric downloads. A visit is a draft on the device (saved as you go), then sealed and sent through the same outbox and
+endpoint as observations, marked `Purpose: "visit"` (workplace: employer, apprentice, date, checks, notes; subcontractor:
+date, checks, learners spoken to, findings, actions and due date). It arrives on the employer's page or the Safeguarding
+page's Subcontractors in Ecordiatlas. No Staff rubrics add-on is needed for visits.
+
 ## Sign-in
 
 Atmosphere has no sign-in of its own: it calls Ecordiatlas's API with the person's Ecordiatlas sign-in. For that:

@@ -414,11 +414,13 @@
     const keep = S.screen === 'home' ? placeToKeep() : null;   // drawn again: stay on the same card
     S.screen = 'home';
     const userId = S.user.userId;
-    const [packs, drafts, outbox, sent] = await Promise.all([A.packs(S.key, userId), A.drafts(S.key, userId), A.outbox(userId), A.sent(userId)]);
+    let [packs, drafts, outbox, sent] = await Promise.all([A.packs(S.key, userId), A.drafts(S.key, userId), A.outbox(userId), A.sent(userId)]);
     if (S.screen !== 'home') return;
     const draftById = Object.fromEntries(drafts.map(d => [d.id, d]));
-    const label = d => d?.draft ? `${d.draft.staffName}` : 'An observation';
-    const sub = d => d?.draft ? `${d.draft.rubricName} · ${fmtDate(d.draft.observedOn)}` : '';
+    const label = d => d?.draft ? (d.draft.visit ? visitTitle(d.draft) : `${d.draft.staffName}`) : 'An observation';
+    const sub = d => d?.draft ? (d.draft.visit ? `Visit check · ${fmtDate(d.draft.visitedOn)}` : `${d.draft.rubricName} · ${fmtDate(d.draft.observedOn)}`) : '';
+    const visitPack = packs.find(p => p.item.Visit);
+    packs = packs.filter(p => !p.item.Visit);
 
     const waiting = outbox.map(o => {
       const d = draftById[o.id];
@@ -431,7 +433,7 @@
         status,
         o.status === 'refused' ? h('div', { class: 'errors' }, h('p', {}, o.error), o.errors?.length > 1 ? h('ul', {}, o.errors.map(e => h('li', {}, e))) : null,
           h('div', { class: 'atm-actions' },
-            o.kind === 'submit' && d?.draft ? h('button', { type: 'button', class: 'small', onclick: guard(async () => { await A.backToDraft(o.id); observe(o.id); }) }, 'Back to the draft') : null,
+            o.kind === 'submit' && d?.draft ? h('button', { type: 'button', class: 'small', onclick: guard(async () => { await A.backToDraft(o.id); (d.draft.visit ? visitScreen : observe)(o.id); }) }, 'Back to the draft') : null,
             h('button', { type: 'button', class: 'small danger', onclick: guard(async () => {
               if (!confirm('Remove this observation from this device? It hasn\'t reached Ecordiatlas, so it will be lost.')) return;
               await A.removeDraft(o.id);
@@ -441,7 +443,7 @@
 
     const inProgress = drafts.filter(d => d.state === 'draft').sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(d => h('li', {},
       h('div', { class: 'who' }, h('strong', {}, label(d)), h('span', { class: 'muted' }, `${sub(d)} · kept here until ${fmtDate(d.keepUntil)}`)),
-      d.draft ? h('button', { type: 'button', class: 'primary', onclick: () => observe(d.id) }, 'Continue', h('span', { class: 'sr-only' }, ` ${d.draft.staffName}`)) : h('span', { class: 'muted' }, 'Can\'t be opened with this passcode')));
+      d.draft ? h('button', { type: 'button', class: 'primary', onclick: () => (d.draft.visit ? visitScreen : observe)(d.id) }, 'Continue', h('span', { class: 'sr-only' }, ` ${label(d)}`)) : h('span', { class: 'muted' }, 'Can\'t be opened with this passcode')));
 
     const ready = packs.sort((a, b) => (a.item.PlannedStart || '').localeCompare(b.item.PlannedStart || '') || a.item.StaffName.localeCompare(b.item.StaffName)).map(p => h('li', {},
       h('div', { class: 'who' }, h('strong', {}, p.item.StaffName),
@@ -451,7 +453,7 @@
 
     const recent = sent.sort((a, b) => b.sentAt.localeCompare(a.sentAt)).slice(0, 10).map(s => h('li', {},
       h('div', { class: 'who' }, h('strong', {}, s.unfinished ? 'Sent unfinished' : 'Sent'), h('span', { class: 'muted' }, fmtWhen(s.sentAt))),
-      S.online ? h('a', { href: atlasLink(`/app/staff/rubrics/records/${s.recordId}`) }, 'Open in Ecordiatlas') : null));
+      S.online ? h('a', { href: atlasLink(s.link || `/app/staff/rubrics/records/${s.recordId}`) }, 'Open in Ecordiatlas') : null));
 
     const canPrepare = S.online && S.signedIn;
     show(
@@ -465,6 +467,13 @@
         S.online && S.signedIn && outbox.some(o => o.status !== 'refused') ? h('button', { type: 'button', onclick: guard(() => sendNow(false)) }, 'Send now') : null) : null,
       inProgress.length ? h('section', { class: 'card', 'aria-labelledby': 'h-progress' }, h('h2', { id: 'h-progress' }, 'In progress'), h('ul', { class: 'atm-list' }, inProgress),
         h('p', { class: 'hint' }, `Only you can see these, on this device. A draft not submitted within ${A.KEEP_DAYS} days is sent to Ecordiatlas unfinished, and the staff member's manager is told.`)) : null,
+      h('section', { class: 'card', 'aria-labelledby': 'h-visits' }, h('h2', { id: 'h-visits' }, 'Visit checks'),
+        h('p', { class: 'hint' }, 'Check a workplace, or audit a subcontractor, with no signal. Download your employers first while you have one.'),
+        visitPack ? h('p', { class: 'muted' }, `${plural(visitPack.item.Employers.length, 'employer')}${visitPack.item.Subcontractors.length ? `, ${plural(visitPack.item.Subcontractors.length, 'subcontractor')}` : ''} on this device, downloaded ${fmtWhen(visitPack.packedAt)}.`) : null,
+        h('div', { class: 'atm-actions' },
+          h('button', { type: 'button', disabled: !canPrepare, onclick: guard(downloadVisits) }, visitPack ? 'Download again' : 'Download employers'),
+          visitPack ? h('button', { type: 'button', class: 'primary', onclick: guard(() => startVisit('workplace', visitPack.item)) }, 'Start a workplace visit') : null,
+          visitPack?.item.Subcontractors.length ? h('button', { type: 'button', class: 'primary', onclick: guard(() => startVisit('subcontractor', visitPack.item)) }, 'Start a subcontractor audit') : null)),
       h('section', { class: 'card', 'aria-labelledby': 'h-ready' }, h('h2', { id: 'h-ready' }, 'Ready to observe'),
         ready.length ? h('ul', { class: 'atm-list' }, ready) : h('p', { class: 'muted' }, 'Nobody yet. Choose who you will observe while you have a signal.')),
       recent.length ? h('section', { class: 'card', 'aria-labelledby': 'h-sent' }, h('h2', { id: 'h-sent' }, 'Sent to Ecordiatlas'), h('ul', { class: 'atm-list' }, recent),
@@ -793,6 +802,112 @@
       h('div', { class: 'card' }, h('button', { type: 'button', class: 'danger', onclick: remove }, 'Delete this draft')),
       h('div', { class: 'atm-save' }, h('div', {}, saveState, h('button', { type: 'button', class: 'primary', onclick: submit }, 'Submit to Ecordiatlas'))));
     drawResult();
+  }
+
+  // ------------------------------------------------------------------ visit checks (safeguarding at work, in Ecordiatlas: SafeguardingWorkService)
+  const ANSWERS = [['', '–'], ['yes', 'Yes'], ['no', 'No'], ['na', 'Not relevant']];
+  const visitTitle = d => d.type === 'subcontractor' ? `Audit: ${d.subName || 'subcontractor not chosen'}` : `Visit: ${d.empName || 'employer not chosen'}`;
+
+  async function downloadVisits() {
+    const pack = await api('GET', '/api/v1/atmosphere/visit-pack');
+    if (!(await A.serverKey())) await A.saveServerKey(await api('GET', '/api/v1/atmosphere/visit-key'));
+    await A.saveVisitPack(S.key, S.user, pack, new Date().toISOString());
+    toast(`Downloaded ${plural(pack.Employers.length, 'employer')}${pack.Subcontractors.length ? ` and ${plural(pack.Subcontractors.length, 'subcontractor')}` : ''}.`);
+    home();
+  }
+
+  async function startVisit(type, pack) {
+    const d = {
+      id: A.uuid(), visit: true, type, pack, empId: '', empName: '', learnerId: '', subId: '', subName: '', visitedOn: todayLocal(), checks: {},
+      notes: '', findings: '', actions: '', actionsDueOn: '', learnersSpokenTo: '', photos: [], startedAt: new Date().toISOString()
+    };
+    await A.saveDraft(S.key, S.user, d);
+    visitScreen(d.id);
+  }
+
+  async function visitScreen(id) {
+    S.screen = 'visit';
+    const row = await A.draft(S.key, id);
+    if (!row?.draft) { toast('That visit isn\'t on this device any more.', true); return home(); }
+    if (row.state !== 'draft') { toast('That visit has been submitted, so it can\'t be changed here.', true); return home(); }
+    const d = row.draft, key = S.key, pack = d.pack, workplace = d.type === 'workplace';
+    let timer = null, saving = Promise.resolve();
+    const saveState = h('span', { class: 'save-state', role: 'status' }, `Saved on this device ${fmtTime(row.updatedAt)}, encrypted.`);
+    const save = () => {
+      clearTimeout(timer);
+      saving = saving.then(async () => {
+        try { await A.saveDraft(key, S.user, d); saveState.textContent = `Saved on this device ${fmtTime(d.updatedAt)}, encrypted.`; }
+        catch (e) { saveState.textContent = `Not saved: ${e.message}`; }
+      });
+      return saving;
+    };
+    const changed = () => { saveState.textContent = 'Saving…'; clearTimeout(timer); timer = setTimeout(save, 500); };
+    const flush = () => { if (timer) save(); };
+    document.addEventListener('visibilitychange', flush, { once: true });
+    const bind = (el, prop, after) => { el.addEventListener('input', () => { d[prop] = el.value; after?.(); changed(); }); return el; };
+
+    const date = bind(h('input', { type: 'date', value: d.visitedOn, max: todayLocal() }), 'visitedOn');
+    const learnerSel = h('select', {});
+    const drawLearners = () => {
+      const emp = pack.Employers.find(e => String(e.EmpId) === String(d.empId));
+      fill(learnerSel, h('option', { value: '' }, 'Not one apprentice in particular'), (emp?.Learners || []).map(l => h('option', { value: l.Key, selected: l.Key === d.learnerId }, l.Label)));
+    };
+    const who = workplace
+      ? bind(h('select', {}, h('option', { value: '' }, 'Choose…'), pack.Employers.map(e => h('option', { value: e.EmpId, selected: String(e.EmpId) === String(d.empId) }, e.Name))), 'empId', () => {
+          d.empName = pack.Employers.find(e => String(e.EmpId) === String(d.empId))?.Name || ''; d.learnerId = ''; drawLearners();
+        })
+      : bind(h('select', {}, h('option', { value: '' }, 'Choose…'), pack.Subcontractors.map(s => h('option', { value: s.Key, selected: s.Key === d.subId }, s.Label))), 'subId', () => {
+          d.subName = pack.Subcontractors.find(s => s.Key === d.subId)?.Label || '';
+        });
+    bind(learnerSel, 'learnerId');
+    drawLearners();
+    const list = workplace ? pack.Workplace : pack.Subcontractor;
+    const checks = list.map(o => {
+      const sel = h('select', { 'aria-label': o.Label }, ANSWERS.map(([k, t]) => h('option', { value: k, selected: (d.checks[o.Key] || '') === k }, t)));
+      sel.addEventListener('change', () => { d.checks[o.Key] = sel.value; changed(); });
+      return h('li', { class: 'atm-check' }, h('span', {}, o.Label), sel);
+    });
+    const text = (prop, rows) => bind(h('textarea', { rows, maxlength: prop === 'notes' ? 2000 : 4000 }, d[prop] || ''), prop);
+    const problems = h('div', { role: 'alert' });
+    const submit = guard(async () => {
+      const missing = [];
+      if (workplace && !d.empId) missing.push('Choose the employer.');
+      if (!workplace && !d.subId) missing.push('Choose the subcontractor.');
+      if (!d.visitedOn) missing.push('Enter the date of the visit.');
+      if (!Object.values(d.checks).some(Boolean)) missing.push('Answer at least one check.');
+      if (missing.length) { fill(problems, h('div', { class: 'errors' }, h('ul', {}, missing.map(m => h('li', {}, m))))); problems.scrollIntoView({ block: 'nearest' }); return; }
+      fill(problems);
+      await save();
+      if (!confirm(`Submit this ${workplace ? 'workplace visit' : 'audit'}? It goes to Ecordiatlas and can't be changed here after that.`)) return;
+      await A.submit(S.user, d);
+      askBackgroundSend();
+      toast(navigator.onLine ? 'Submitted. Sending to Ecordiatlas…' : 'Submitted. It will be sent to Ecordiatlas when you have a signal.');
+      await home();
+      sendNow(false);
+    });
+    const remove = guard(async () => {
+      if (!confirm('Delete this visit from this device? It hasn\'t been sent, so it will be lost.')) return;
+      clearTimeout(timer);
+      await A.removeDraft(d.id);
+      toast('Visit deleted.');
+      home();
+    });
+    show(
+      h('p', {}, h('a', { href: '/', onclick: ev => { ev.preventDefault(); flush(); home(); } }, '← Today\'s observations')),
+      h('h1', {}, workplace ? 'Workplace visit' : 'Subcontractor audit'),
+      h('div', { class: 'card' },
+        h('div', { class: 'fields' }, field(workplace ? 'Employer' : 'Subcontractor', who), workplace ? field('Apprentice', learnerSel) : null, field('Date of the visit', date),
+          workplace ? null : field('Learners spoken to', bind(h('input', { type: 'number', min: 0, max: 999, value: d.learnersSpokenTo ?? '' }), 'learnersSpokenTo'))),
+        h('p', { class: 'hint' }, `A draft: only you can see it, on this device, until you submit it. Kept here until ${fmtDate(row.keepUntil)}.`)),
+      problems,
+      h('section', { class: 'card' }, h('h2', {}, 'Checks'), h('ul', { class: 'atm-list atm-checks' }, checks),
+        workplace ? h('p', { class: 'hint' }, 'If you see or hear anything worrying, raise a safeguarding concern in Ecordiatlas as well, today. If someone is in immediate danger, call 999.') : null),
+      workplace
+        ? h('section', { class: 'card' }, h('h2', {}, 'Notes'), field('What you saw and agreed', text('notes', 4)))
+        : h('section', { class: 'card' }, h('h2', {}, 'Findings and actions'), field('Findings', text('findings', 4)), field('Actions agreed', text('actions', 3)),
+            field('Actions due by', bind(h('input', { type: 'date', value: d.actionsDueOn || '' }), 'actionsDueOn'))),
+      h('div', { class: 'card' }, h('button', { type: 'button', class: 'danger', onclick: remove }, 'Delete this visit')),
+      h('div', { class: 'atm-save' }, h('div', {}, saveState, h('button', { type: 'button', class: 'primary', onclick: submit }, 'Submit to Ecordiatlas'))));
   }
 
   // ------------------------------------------------------------------ photos: the same rule as every upload
