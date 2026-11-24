@@ -1,7 +1,7 @@
 'use strict';
 /*
-  Atmosphere's storage on the device and its encryption. Loaded by the page (atmosphere.js) and by the service worker
-  (sw.js), which sends what is waiting in the background, to Ecordiatlas's API (its address is in meta "atlas"). Spec: Ecordia Atmosphere.
+  Ecordiargus's storage on the device and its encryption. Loaded by the page (atmosphere.js) and by the service worker
+  (sw.js), which sends what is waiting in the background, to Ecordiatlas's API (its address is in meta "atlas"). Spec: Ecordiargus.
 
   IndexedDB "ecordia-atmosphere":
     meta     device id, the server's public key, and per user: name, organisation, and their data key wrapped two ways
@@ -15,7 +15,7 @@
     sent     record ids sent recently (no names), for links to Ecordiatlas. Kept 14 days.
 
   Encryption: AES-256-GCM (WebCrypto). The data key never leaves the device unwrapped; it is in memory only while
-  Atmosphere is unlocked. Passcode: PBKDF2-SHA-256, 600,000 rounds. Sealing to the server: a fresh AES key per item,
+  Ecordiargus is unlocked. Passcode: PBKDF2-SHA-256, 600,000 rounds. Sealing to the server: a fresh AES key per item,
   wrapped with the server's RSA-OAEP (SHA-256) key (Services/AtmosphereService.cs).
 */
 (function (root) {
@@ -44,7 +44,7 @@
         resolve(d);
       };
       r.onerror = () => reject(r.error);
-      r.onblocked = () => reject(new Error('Close Atmosphere in your other tabs, then try again.'));
+      r.onblocked = () => reject(new Error('Close Ecordiargus in your other tabs, then try again.'));
     });
     return dbPromise;
   }
@@ -88,7 +88,7 @@
 
   /** Seals bytes to the server (only Ecordiatlas can open it): { V, Kid, Key, Iv, Data }. */
   async function seal(bytes, pub) {
-    if (!pub) throw new Error('Atmosphere needs a signal once to get Ecordiatlas\'s key.');
+    if (!pub) throw new Error('Ecordiargus needs a signal once to get Ecordiatlas\'s key.');
     const rsa = await crypto.subtle.importKey('spki', unb64(pub.PublicKey), { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
     const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
     const iv = crypto.getRandomValues(new Uint8Array(12));

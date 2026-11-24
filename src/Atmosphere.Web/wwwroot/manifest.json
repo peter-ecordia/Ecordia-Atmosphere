@@ -1,6 +1,6 @@
 {
-  "name": "Ecordia Atmosphere",
-  "short_name": "Atmosphere",
+  "name": "Ecordiargus",
+  "short_name": "Ecordiargus",
   "description": "Observe colleagues against your Ecordiatlas rubrics, with or without a signal.",
   "id": "/",
   "start_url": "/",
@@ -8,7 +8,7 @@
   "display": "standalone",
   "orientation": "any",
   "background_color": "#f6f7f9",
-  "theme_color": "#0b5cad",
+  "theme_color": "#a99be8",
   "lang": "en-GB",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

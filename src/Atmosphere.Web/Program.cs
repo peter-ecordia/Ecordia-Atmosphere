@@ -1,6 +1,6 @@
-// Ecordia Atmosphere's web host (spec: Ecordia Atmosphere, 21 Nov 2026). Atmosphere is an offline web app (wwwroot):
+// Ecordiargus's web host (spec: Ecordiargus, 21 Nov 2026). Ecordiargus is an offline web app (wwwroot):
 // this host only serves its files, with the right security headers, and tells it where Ecordiatlas is (/config.json).
-// Everything else (sign-in, rubrics, observations, encryption keys) is Ecordiatlas's API. Atmosphere and Ecordiatlas
+// Everything else (sign-in, rubrics, observations, encryption keys) is Ecordiatlas's API. Ecordiargus and Ecordiatlas
 // must share a parent domain (e.g. atmosphere.ecordia.co.uk and ilr.ecordia.co.uk), so the Ecordiatlas sign-in
 // carries across; Ecordiatlas's Atmosphere:Url must name this site.
 
@@ -30,7 +30,7 @@ app.Use((http, next) =>
     return next();
 });
 
-// Where Ecordiatlas is. Cached by the service worker, so Atmosphere still knows when it opens with no signal.
+// Where Ecordiatlas is. Cached by the service worker, so Ecordiargus still knows when it opens with no signal.
 app.MapGet("/config.json", (HttpContext http) =>
 {
     http.Response.Headers.CacheControl = "no-cache";

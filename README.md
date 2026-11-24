@@ -1,12 +1,16 @@
-# Ecordia Atmosphere
+# Ecordiargus
 
-Atmosphere is the offline app for Ecordiatlas's Staff rubrics add-on (spec: *Ecordia Atmosphere – Spec*, 21 Nov 2026).
+Ecordiargus is the offline app for Ecordiatlas's Staff rubrics add-on (spec: *Ecordia Atmosphere – Spec*, 21 Nov 2026).
 Staff use it to observe colleagues against the rubrics defined in Ecordiatlas, with no internet during the observation.
 It is a web app that installs on a phone, tablet or computer (mobile first).
 
+It was called Atmosphere until 24 Nov 2026. Everything people see now says Ecordiargus; names that devices or
+Ecordiatlas depend on keep the old name so nothing breaks: the folder and project `Atmosphere.Web`, the device storage
+`ecordia-atmosphere`, the API path `/api/v1/atmosphere/*`, the `atmosphere` client header and Ecordiatlas's `Atmosphere:Url` setting.
+
 This repository is the app and a small web host for it. Everything else is Ecordiatlas's
 ([peter-ecordia/Ecordiatlas](https://github.com/peter-ecordia/Ecordiatlas)): sign-in, rubrics, observations, the
-encryption keys and the API (`/api/v1/atmosphere/*`). Ecordiatlas's README, *Staff rubrics (add-on) → Atmosphere*,
+encryption keys and the API (`/api/v1/atmosphere/*`). Ecordiatlas's README, *Staff rubrics (add-on) → Ecordiargus*,
 describes the server side.
 
 ## How it works
@@ -19,7 +23,7 @@ describes the server side.
    the device as you go (IndexedDB).
 4. **Submit**: checked first (a level for every criterion, the comments and evidence the rubric asks for), then sent at
    once or, with no signal, by background sync when the signal is back (iPhone and iPad have no background sync, so
-   there it goes when Atmosphere is next opened). It arrives in Ecordiatlas shared with the staff member.
+   there it goes when Ecordiargus is next opened). It arrives in Ecordiatlas shared with the staff member.
 5. **Clear**: once Ecordiatlas answers, the device deletes its copy.
 
 Before submission an observation can only be changed here, on the device. After it, Ecordiatlas owns it: only the staff
@@ -33,7 +37,7 @@ signing in to Ecordiatlas again.
 
 ## Visit checks (safeguarding at work)
 
-Atmosphere also does **workplace visits** and **subcontractor audits** offline (Ecordiatlas: *Safeguarding at work*,
+Ecordiargus also does **workplace visits** and **subcontractor audits** offline (Ecordiatlas: *Safeguarding at work*,
 `Services/SafeguardingWorkService.cs`). *Download employers* on the home screen fetches the checklists, the employers of the
 person's learners with their learners and, for admins, the subcontractors (`GET /api/v1/atmosphere/visit-pack`), kept encrypted
 like rubric downloads. A visit is a draft on the device (saved as you go), then sealed and sent through the same outbox and
@@ -50,16 +54,16 @@ outbox (`Purpose: "register"`) and saved in Ecordiatlas as the session's registe
 
 ## Sign-in
 
-Atmosphere has no sign-in of its own: it calls Ecordiatlas's API with the person's Ecordiatlas sign-in. For that:
+Ecordiargus has no sign-in of its own: it calls Ecordiatlas's API with the person's Ecordiatlas sign-in. For that:
 
-- **Atmosphere and Ecordiatlas must share a parent domain**, e.g. `atmosphere.ecordia.co.uk` and `ilr.ecordia.co.uk`, so
-  the sign-in cookie goes with Atmosphere's calls. (On different domains it would also need Ecordiatlas's
+- **Ecordiargus and Ecordiatlas must share a parent domain**, e.g. `atmosphere.ecordia.co.uk` and `ilr.ecordia.co.uk`, so
+  the sign-in cookie goes with Ecordiargus's calls. (On different domains it would also need Ecordiatlas's
   `EcordiaApp:CrossSiteCookies` and browsers that allow third-party cookies, so don't.)
 - Ecordiatlas's `Atmosphere:Url` names this site: it lets only this site call the API (CORS) and sends people here
   after signing in (`/sso/atmosphere`).
-- From the Ecordia app, the Menu's *Atmosphere* opens it already signed in, with a one-time launch token
+- From the Ecordia app, the Menu's *Ecordiargus* opens it already signed in, with a one-time launch token
   (`/sso/ecordia-app`, `returnUrl=/atmosphere/`).
-- From Ecordiatlas, Staff → Rubrics → *Observe offline (Atmosphere)*.
+- From Ecordiatlas, Staff → Rubrics → *Observe offline (Ecordiargus)*.
 
 ## Files
 
@@ -69,7 +73,7 @@ Atmosphere has no sign-in of its own: it calls Ecordiatlas's API with the person
 | `wwwroot/index.html`, `atmosphere.js` | The screens: set-up and unlock, today's observations, choosing who to observe, observing |
 | `wwwroot/store.js` | Storage on the device and encryption; sends what is waiting (used by the page and the service worker) |
 | `wwwroot/sw.js` | Service worker: keeps the app's files for offline use, background sync |
-| `wwwroot/base.css` | A copy of Ecordiatlas's look (colours, controls, rubric levels); `atmosphere.css` is Atmosphere's own layout |
+| `wwwroot/base.css` | A copy of Ecordiatlas's look (colours, controls, rubric levels); `atmosphere.css` is Ecordiargus's own layout |
 | `wwwroot/manifest.json`, icons | Installing it |
 
 ## Settings
@@ -82,7 +86,7 @@ And in Ecordiatlas: `Atmosphere:Url` = this site's address, e.g. `https://atmosp
 
 ## Accessibility (WCAG 2.2 AA)
 
-Atmosphere is built to WCAG 2.2 AA, like Ecordiatlas, in light and dark (it follows the device) and down to 320px wide:
+Ecordiargus is built to WCAG 2.2 AA, like Ecordiatlas, in light and dark (it follows the device) and down to 320px wide:
 
 - skip link, one `h1` per screen, focus moved to it, and the tab title names the screen
 - every control has a visible label (the people search, each person's rubric, each action and its due date); criteria
@@ -115,7 +119,7 @@ visit with a signal.
 
 ## Not built yet
 
-- Going from Atmosphere into the Ecordia app already signed in: its *Ecordia* link opens the app, which asks for its
+- Going from Ecordiargus into the Ecordia app already signed in: its *Ecordia* link opens the app, which asks for its
   own sign-in if it has none on that device. That needs Ecordia's server to accept a sign-in from Ecordiatlas, which
   Ecordia has to agree against its security standards.
 - Tested in desktop Chrome (offline drafts, submitting with Ecordiatlas unreachable, sending when back, the 14-day

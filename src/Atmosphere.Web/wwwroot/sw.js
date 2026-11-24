@@ -1,19 +1,19 @@
 'use strict';
 /*
-  Atmosphere's service worker (scope: the whole site). Spec: Ecordia Atmosphere.
-  - Keeps the app's own files, so Atmosphere opens with no signal. Each file is fetched fresh when there is a signal
+  Ecordiargus's service worker (scope: the whole site). Spec: Ecordiargus.
+  - Keeps the app's own files, so Ecordiargus opens with no signal. Each file is fetched fresh when there is a signal
     (falling back to the saved copy after a few seconds), so an update arrives the next time it is opened online.
   - Background sync: sends what is waiting (sealed to the server, so no passcode is needed) when the signal is back,
-    even if Atmosphere has been closed. Where the browser has no background sync (iPhone and iPad), the page sends it
-    when Atmosphere is next opened with a signal.
+    even if Ecordiargus has been closed. Where the browser has no background sync (iPhone and iPad), the page sends it
+    when Ecordiargus is next opened with a signal.
   - Drafts left 14 days go to Ecordiatlas unfinished, on the same occasions.
   The API is never cached.
 */
 importScripts('store.js');
 
-const CACHE = 'atmosphere-v5';
+const CACHE = 'argus-v6';   // (was atmosphere-v5; the old copy is cleared on activate)
 const SHELL = ['/', '/atmosphere.js', '/store.js', '/base.css', '/atmosphere.css', '/theme.js', '/config.json', '/manifest.json',
-  '/icon.svg', '/icon-192.png', '/icon-512.png'];
+  '/icon.svg', '/icon-192.png', '/icon-512.png', '/ecordiargus-logo-light.png', '/ecordiargus-logo-dark.png'];
 const NETWORK_WAIT_MS = 4000;
 
 self.addEventListener('install', e => {
@@ -27,7 +27,7 @@ self.addEventListener('activate', e => {
   })());
 });
 
-// Atmosphere's own files only: calls to Ecordiatlas's API (another site) always go to the network.
+// Ecordiargus's own files only: calls to Ecordiatlas's API (another site) always go to the network.
 const isShell = url => url.origin === location.origin && url.pathname !== '/healthz';
 
 self.addEventListener('fetch', e => {
@@ -50,7 +50,7 @@ self.addEventListener('fetch', e => {
   })());
 });
 
-/** Expire, send, and tell any open Atmosphere pages what happened. */
+/** Expire, send, and tell any open Ecordiargus pages what happened. */
 async function sendNow(reason) {
   await Atmosphere.expire();
   const result = await Atmosphere.sendOutbox();

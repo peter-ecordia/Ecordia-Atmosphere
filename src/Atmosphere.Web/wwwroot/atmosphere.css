@@ -1,4 +1,4 @@
-/* Atmosphere (wwwroot/atmosphere/): Ecordiatlas's offline observation app. Builds on /app.css (colours, buttons, level
+/* Ecordiargus (wwwroot/atmosphere/): Ecordiatlas's offline observation app. Builds on /app.css (colours, buttons, level
    cells) and is laid out for a phone first. */
 
 html { scroll-padding-top: 6rem; scroll-padding-bottom: 6rem; }
@@ -7,7 +7,7 @@ body.atm { margin: 0; min-height: 100vh; padding-bottom: env(safe-area-inset-bot
 .atm-bar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; padding: .5rem 1rem; padding-top: max(.5rem, env(safe-area-inset-top));
   background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
 .atm-brand { display: inline-flex; align-items: center; gap: .45rem; font-weight: 700; font-size: 1.1rem; color: var(--ink); text-decoration: none; min-height: 44px; }
-.atm-brand img { border-radius: 6px; }
+.atm-brand img { border-radius: 6px; }   /* (the logo rules at the end override this) */
 .atm-signal { font-size: .82rem; }
 .atm-nav { margin-left: auto; display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
 .atm-nav a, .atm-nav button { font-size: .88rem; }
@@ -70,3 +70,9 @@ body.atm { margin: 0; min-height: 100vh; padding-bottom: env(safe-area-inset-bot
 .atm-checks .atm-check { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; justify-content: space-between; }
 .atm-checks .atm-check > span { flex: 1 1 16rem; }
 .atm-checks .atm-check select { min-height: 44px; min-width: 9rem; }
+
+/* The Ecordiargus logo (product family, 24 Nov 2026): the light-theme picture on light, the dark-theme one on dark. */
+.atm-brand img { display: block; height: 30px; width: auto; border-radius: 0; }
+.atm-brand .logo-dark { display: none; }
+:root[data-theme="dark"] .atm-brand .logo-light { display: none; }
+:root[data-theme="dark"] .atm-brand .logo-dark { display: block; }

@@ -1,6 +1,6 @@
-/* Copied from Ecordiatlas's app.css (21 Nov 2026; WCAG 2.2 AA control edges, tick boxes and level edges brought across the same day) so Atmosphere looks the same as Ecordiatlas: colour tokens for
+/* Copied from Ecordiatlas's app.css (21 Nov 2026; WCAG 2.2 AA control edges, tick boxes and level edges brought across the same day) so Ecordiargus looks like Ecordiatlas (but in Ecordiargus lilac, 24 Nov 2026: --accent, --primary-*, hovers, focus and charts differ): colour tokens for
    light and dark, base elements, controls, cards, pills, the toast and the rubric level cells. Copy changes across
-   when Ecordiatlas's look changes. Atmosphere's own layout is in atmosphere.css. */
+   when Ecordiatlas's look changes. Ecordiargus's own layout is in atmosphere.css. */
 
 :root {
     --bg: #f6f7f9;
@@ -8,8 +8,11 @@
     --ink: #1d2433;
     --muted: #5b6577;
     --line: #dde1e8;
-    --accent: #0b5cad;
+    --accent: #5b4db3;             /* Ecordiargus lilac, darkened for text and edges: 6.7:1 on white, 6.2:1 on the page background */
     --accent-ink: #ffffff;
+    --primary-bg: #a99be8;         /* Ecordiargus lilac (product family, 24 Nov 2026): main buttons are lilac with midnight text, 6.3:1 */
+    --primary-ink: #1b1f4e;
+    --primary-edge: #5b4db3;       /* lilac alone is 2.5:1 on white, so main buttons have a 2px darker lilac edge (WCAG 1.4.11) */
     --error: #b42318;
     --error-bg: #fdecea;
     --warn: #8a5a00;
@@ -17,13 +20,13 @@
     --ok: #146c43;
     --control-border: #6b7585;   /* 4.7:1 on white, 4.4:1 on the page background: control boundaries need 3:1 (WCAG 1.4.11) */
     --button-border: #7a8393;    /* 3.9:1 on white, 3.6:1 on the page background */
-    --focus: #0b5cad;            /* 6.7:1 on white */
+    --focus: #5b4db3;            /* 6.7:1 on white */
     --radius: 8px;
     /* Surfaces and states (each has a dark equivalent below) */
-    --hover: #e8eef7;
-    --row-hover: #f1f5fb;
-    --btn-hover: #eef2f7;
-    --primary-hover: #094c8f;
+    --hover: #efedfb;
+    --row-hover: #f5f4fd;
+    --btn-hover: #f1effb;
+    --primary-hover: #9787e0;      /* midnight text 5.1:1 */
     --input-bg: #ffffff;
     --disabled-bg: #f2f4f7;
     --disabled-ink: #4a5263;
@@ -40,10 +43,10 @@
     --alert-bg: #b42318;
     --alert-ink: #ffffff;
     --chart-grid: #e6e9ee;
-    --chart-earned: #0b5cad;
-    --chart-forecast: #3d8bd9;
-    --chart-forecast-edge: #2f80d1;
-    --chart-forecast-light: #9ec5ec;
+    --chart-earned: #5b4db3;
+    --chart-forecast: #a99be8;
+    --chart-forecast-edge: #7b6dd0;
+    --chart-forecast-light: #d9d3f6;
     --chart-hatch: #ffffff;
     color-scheme: light;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -60,8 +63,11 @@
     --ink: #e7eaf0;
     --muted: #a4aec0;
     --line: #2e3644;
-    --accent: #7ab8ff;
-    --accent-ink: #0a1726;
+    --accent: #a99be8;             /* 7.0:1 on the dark panel */
+    --accent-ink: #1b1f4e;
+    --primary-bg: #a99be8;
+    --primary-ink: #1b1f4e;
+    --primary-edge: #a99be8;
     --error: #ff9b91;
     --error-bg: #3b1715;
     --warn: #f5c451;
@@ -69,11 +75,11 @@
     --ok: #6fdba5;
     --control-border: #8a95a8;
     --button-border: #7d889b;
-    --focus: #9ccbff;
-    --hover: #222c3b;
-    --row-hover: #1e2631;
-    --btn-hover: #232b37;
-    --primary-hover: #a6cfff;
+    --focus: #c7bef4;
+    --hover: #26243d;
+    --row-hover: #1f1e31;
+    --btn-hover: #25233a;
+    --primary-hover: #c2b8f1;
     --input-bg: #0f141b;
     --disabled-bg: #1f2530;
     --disabled-ink: #b3bccb;
@@ -90,11 +96,11 @@
     --alert-bg: #ffb4ab;
     --alert-ink: #3b0a05;
     --chart-grid: #2b3341;
-    --chart-earned: #5aa5f5;
-    --chart-forecast: #2a6fb8;
-    --chart-forecast-edge: #6aaef2;
-    --chart-forecast-light: #1c4673;
-    --chart-hatch: #9ccbff;
+    --chart-earned: #a99be8;
+    --chart-forecast: #5b4db3;
+    --chart-forecast-edge: #c2b8f1;
+    --chart-forecast-light: #2e2a55;
+    --chart-hatch: #c7bef4;
     color-scheme: dark;
 }
 
@@ -128,8 +134,8 @@ h3 { font-size: 1rem; margin: 1rem 0 .5rem; }
     min-height: 2.25rem; line-height: 1.2;
 }
 .btn:hover, button:hover:not(:disabled) { background: var(--btn-hover); }
-.btn.primary:hover, button.primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
-.btn.primary, button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover, button.primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-edge); }
+.btn.primary, button.primary { background: var(--primary-bg); border-color: var(--primary-edge); color: var(--primary-ink); }
 button.danger { color: var(--error); border-color: var(--error); }
 button.small { padding: calc(.25rem - 1px) calc(.6rem - 1px); font-size: .85rem; min-height: 24px; min-width: 24px; }   /* WCAG 2.5.8 target size */
 button:disabled { opacity: .55; cursor: not-allowed; }

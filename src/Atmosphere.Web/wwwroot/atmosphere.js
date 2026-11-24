@@ -1,8 +1,8 @@
 'use strict';
 /*
-  Atmosphere: Ecordiatlas's offline observation app (spec: Ecordia Atmosphere, 21 Nov 2026).
+  Ecordiargus: Ecordiatlas's offline observation app (spec: Ecordiargus, 21 Nov 2026).
     Prepare (online)  the observer chooses who they will observe (their planned observations are ticked).
-    Cache             Atmosphere downloads each person's rubric, name and role, encrypted on the device.
+    Cache             Ecordiargus downloads each person's rubric, name and role, encrypted on the device.
     Observe (offline) the observer completes the rubric; the draft is saved on the device as they go (IndexedDB).
     Submit (online)   the observation is sealed for Ecordiatlas and sent, now or by background sync later.
     Clear             once Ecordiatlas has it, the device deletes its copy.
@@ -152,7 +152,7 @@
     if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
     // Each screen names itself in the tab title (WCAG 2.4.2).
     const name = heading?.textContent.trim();
-    document.title = name && name !== 'Atmosphere' ? `${name} - Atmosphere` : 'Atmosphere';
+    document.title = name && name !== 'Ecordiargus' ? `${name} - Ecordiargus` : 'Ecordiargus';
     drawNav();
   }
 
@@ -173,14 +173,14 @@
         try {
           const p = await navigator.permissions?.query({ name: 'periodic-background-sync' });
           if (!p || p.state === 'granted') await reg.periodicSync.register('atmosphere-check', { minInterval: 12 * 60 * 60 * 1000 });
-        } catch { /* not allowed: checked whenever Atmosphere is opened */ }
+        } catch { /* not allowed: checked whenever Ecordiargus is opened */ }
       }
-    } catch (e) { console.warn('Atmosphere offline files not set up', e); }
+    } catch (e) { console.warn('Ecordiargus offline files not set up', e); }
   }
 
-  /** Background sync sends what is waiting when the signal comes back, even if Atmosphere is closed (not on iPhone or iPad). */
+  /** Background sync sends what is waiting when the signal comes back, even if Ecordiargus is closed (not on iPhone or iPad). */
   async function askBackgroundSend() {
-    try { const reg = await navigator.serviceWorker?.ready; await reg?.sync?.register('atmosphere-send'); } catch { /* sent when Atmosphere is next opened */ }
+    try { const reg = await navigator.serviceWorker?.ready; await reg?.sync?.register('atmosphere-send'); } catch { /* sent when Ecordiargus is next opened */ }
   }
 
   let sending = false;
@@ -225,11 +225,11 @@
     window.addEventListener('offline', () => setOnline(false));
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) { S.hiddenAt = Date.now(); return; }
-      if (S.key && S.hiddenAt && Date.now() - S.hiddenAt > LOCK_AFTER_MS) lockNow('Atmosphere locked itself while you were away.');
+      if (S.key && S.hiddenAt && Date.now() - S.hiddenAt > LOCK_AFTER_MS) lockNow('Ecordiargus locked itself while you were away.');
       else if (S.key) sendNow(true);
     });
     registerWorker();
-    // While Atmosphere is open and unlocked, anything waiting is tried again every minute (phones don't always say when
+    // While Ecordiargus is open and unlocked, anything waiting is tried again every minute (phones don't always say when
     // the signal is back, and Ecordiatlas may have been the one out of reach).
     setInterval(() => { if (S.key && navigator.onLine && !document.hidden) sendNow(true); }, 60000);
     // Where Ecordiatlas is: from this site's /config.json (the service worker's copy when there is no signal).
@@ -250,7 +250,7 @@
     if (me?.UserId) {
       S.signedIn = true;
       const tenants = me.Tenants || [];
-      if (!tenants.length) return show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Atmosphere'), h('p', {}, 'Your Ecordiatlas account isn\'t in an organisation yet, so there is nothing to observe.')));
+      if (!tenants.length) return show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Ecordiargus'), h('p', {}, 'Your Ecordiatlas account isn\'t in an organisation yet, so there is nothing to observe.')));
       const remembered = (() => { try { return localStorage.getItem('atm.tenant.' + me.UserId); } catch { return null; } })();
       const pick = tenants.find(t => t.Id === wantTenant) || tenants.find(t => t.Id === remembered) || (tenants.length === 1 ? tenants[0] : null);
       if (!pick) return chooseOrganisation(me, tenants);
@@ -261,8 +261,8 @@
       S.user = last;   // keep working offline; sign in to send
     } else {
       const last = await A.lastUser();
-      if (!last?.recovery) return show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Atmosphere needs a signal the first time'),
-        h('p', {}, 'Open Atmosphere once with a signal and sign in with your Ecordiatlas account. After that it works with no signal.')));
+      if (!last?.recovery) return show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Ecordiargus needs a signal the first time'),
+        h('p', {}, 'Open Ecordiargus once with a signal and sign in with your Ecordiatlas account. After that it works with no signal.')));
       S.user = last;
     }
     if (S.signedIn && (recoverAsked || recoveryPending())) return finishRecovery();
@@ -320,7 +320,7 @@
       sendNow(true);
     });
     show(h('form', { class: 'card atm-lock', onsubmit: unlock },
-      h('h1', {}, 'Unlock Atmosphere'),
+      h('h1', {}, 'Unlock Ecordiargus'),
       message ? h('p', { class: 'notice-line' }, message) : null,
       h('p', {}, `${u.email || u.name}${u.tenantName ? ` · ${u.tenantName}` : ''}`),
       !u.byPasscode ? h('p', { class: 'notice-line' }, 'Too many wrong passcodes. Unlock with your Ecordiatlas sign-in instead.') : field('Passcode', input),
@@ -344,29 +344,29 @@
       if (one.value !== two.value) { error.textContent = 'The two passcodes don\'t match.'; two.focus(); return null; }
       return one.value;
     };
-    return { old, error, check, els: [old ? field('Current passcode', old) : null, field('New passcode', one, `At least ${MIN_PASSCODE} digits or characters. You'll need it each time you open Atmosphere.`), field('The new passcode again', two), error] };
+    return { old, error, check, els: [old ? field('Current passcode', old) : null, field('New passcode', one, `At least ${MIN_PASSCODE} digits or characters. You'll need it each time you open Ecordiargus.`), field('The new passcode again', two), error] };
   }
 
   async function setUpScreen() {
     S.screen = 'setup';
-    if (!S.online || !S.signedIn) return show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Atmosphere needs a signal to set up'),
-      h('p', {}, 'Open Atmosphere with a signal and sign in with your Ecordiatlas account. After that it works with no signal.'),
+    if (!S.online || !S.signedIn) return show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Ecordiargus needs a signal to set up'),
+      h('p', {}, 'Open Ecordiargus with a signal and sign in with your Ecordiatlas account. After that it works with no signal.'),
       S.online ? h('a', { class: 'btn primary', href: signInUrl() }, 'Sign in') : null));
-    if (S.noAddOn) return show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Atmosphere'), h('p', {}, S.noAddOn)));
+    if (S.noAddOn) return show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Ecordiargus'), h('p', {}, S.noAddOn)));
     const f = passcodeFields(false);
     const go = guard(async ev => {
       ev.preventDefault();
       const pass = f.check();
       if (!pass) return;
       S.key = await A.setUpUser(S.user, pass, await A.serverKey());
-      toast('Atmosphere is ready on this device.');
+      toast('Ecordiargus is ready on this device.');
       home();
     });
     show(h('form', { class: 'card atm-lock', onsubmit: go },
       h('h1', {}, 'Choose a passcode'),
-      h('p', {}, 'Atmosphere keeps the rubrics and your observations on this device, encrypted, so you can work with no signal. The passcode unlocks them.'),
+      h('p', {}, 'Ecordiargus keeps the rubrics and your observations on this device, encrypted, so you can work with no signal. The passcode unlocks them.'),
       h('p', { class: 'hint' }, 'If you forget it, you can unlock with your Ecordiatlas sign-in when you have a signal.'),
-      f.els, h('button', { class: 'primary atm-big', type: 'submit' }, 'Set up Atmosphere')));
+      f.els, h('button', { class: 'primary atm-big', type: 'submit' }, 'Set up Ecordiargus')));
   }
 
   const RECOVERY_KEY = 'atm.recovery';
@@ -382,7 +382,7 @@
     try { localStorage.setItem(RECOVERY_KEY, JSON.stringify({ userId: S.user.userId, at: Date.now() })); } catch { /* blocked */ }
     if (S.user.ecordiaUrl) {
       show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Sign in again'),
-        h('p', {}, 'Open Atmosphere again from the Ecordia app (that signs you in), or sign in to Ecordiatlas here.'),
+        h('p', {}, 'Open Ecordiargus again from the Ecordia app (that signs you in), or sign in to Ecordiatlas here.'),
         h('div', { class: 'toolbar' }, h('a', { class: 'btn primary', href: S.user.ecordiaUrl }, 'Open the Ecordia app'), h('a', { class: 'btn', href: ATLAS + r.SignInUrl }, 'Sign in to Ecordiatlas'))));
     } else location.href = ATLAS + r.SignInUrl;
   }
@@ -488,7 +488,7 @@
       recent.length ? h('section', { class: 'card', 'aria-labelledby': 'h-sent' }, h('h2', { id: 'h-sent' }, 'Sent to Ecordiatlas'), h('ul', { class: 'atm-list' }, recent),
         h('p', { class: 'hint' }, 'Ecordiatlas has these now: only the staff member\'s manager can change them there.')) : null,
       h('section', { class: 'card', 'aria-labelledby': 'h-device' }, h('h2', { id: 'h-device' }, 'This device'),
-        h('p', { class: 'hint' }, `Everything here is encrypted and kept for up to ${A.KEEP_DAYS} days. Atmosphere locks itself after 5 minutes away.`),
+        h('p', { class: 'hint' }, `Everything here is encrypted and kept for up to ${A.KEEP_DAYS} days. Ecordiargus locks itself after 5 minutes away.`),
         h('div', { class: 'atm-actions' },
           h('button', { type: 'button', onclick: () => changePasscodeScreen() }, 'Change passcode'),
           h('button', { type: 'button', class: 'danger', onclick: guard(() => forgetDevice(outbox.length + inProgress.length)) }, 'Remove everything from this device'))));
@@ -497,10 +497,10 @@
 
   async function forgetDevice(unsent) {
     const warn = unsent ? `${plural(unsent, 'observation')} on this device ${unsent === 1 ? 'hasn\'t' : 'haven\'t'} reached Ecordiatlas and will be lost. ` : '';
-    if (!confirm(`${warn}Remove all your Atmosphere data from this device? This can't be undone.`)) return;
+    if (!confirm(`${warn}Remove all your Ecordiargus data from this device? This can't be undone.`)) return;
     await A.forget(S.user.userId);
     S.key = null;
-    toast('Your Atmosphere data has been removed from this device.');
+    toast('Your Ecordiargus data has been removed from this device.');
     setUpScreen();
   }
 
@@ -575,7 +575,7 @@
     });
 
     show(h('h1', {}, 'Choose who to observe'),
-      h('p', { class: 'muted' }, 'Atmosphere downloads the rubric, name and role for each person you tick, so you can observe them with no signal.'),
+      h('p', { class: 'muted' }, 'Ecordiargus downloads the rubric, name and role for each person you tick, so you can observe them with no signal.'),
       planned.length ? h('section', { class: 'card', 'aria-labelledby': 'h-planned' }, h('h2', { id: 'h-planned' }, 'Your planned observations'),
         h('ul', { class: 'atm-list atm-choose' }, planned)) : null,
       h('section', { class: 'card', 'aria-labelledby': 'h-people' }, h('h2', { id: 'h-people' }, planned.length ? 'Anyone else' : 'People you can observe'),
@@ -644,7 +644,7 @@
     if (!row?.draft) { toast('That observation isn\'t on this device any more.', true); return home(); }
     if (row.state !== 'draft') { toast('That observation has been submitted, so it can\'t be changed here.', true); return home(); }
     const d = row.draft;
-    const key = S.key;   // (a save still due when Atmosphere locks goes through)
+    const key = S.key;   // (a save still due when Ecordiargus locks goes through)
     const g = d.grid;
     const levels = g.Levels;
     let timer = null, saving = Promise.resolve();
@@ -658,7 +658,7 @@
       return saving;
     };
     const changed = () => { saveState.textContent = 'Saving…'; clearTimeout(timer); timer = setTimeout(save, 500); drawResult(); };
-    // Saved before the page goes away or Atmosphere locks.
+    // Saved before the page goes away or Ecordiargus locks.
     const flush = () => { if (timer) save(); };
     document.addEventListener('visibilitychange', flush, { once: true });
 
@@ -1028,12 +1028,12 @@
     } finally { bitmap.close?.(); }
   }
 
-  // If the device's storage doesn't answer (another Atmosphere tab is holding it), say so rather than wait for ever.
+  // If the device's storage doesn't answer (another Ecordiargus tab is holding it), say so rather than wait for ever.
   let started = false;
-  setTimeout(() => { if (!started && $main().textContent.includes('Opening Atmosphere')) show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Atmosphere is still opening'),
-    h('p', {}, 'Close Atmosphere in your other tabs or windows, then try again.'), h('button', { type: 'button', class: 'primary', onclick: () => location.reload() }, 'Try again'))); }, 15000);
+  setTimeout(() => { if (!started && $main().textContent.includes('Opening Ecordiargus')) show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Ecordiargus is still opening'),
+    h('p', {}, 'Close Ecordiargus in your other tabs or windows, then try again.'), h('button', { type: 'button', class: 'primary', onclick: () => location.reload() }, 'Try again'))); }, 15000);
   document.addEventListener('DOMContentLoaded', () => boot().catch(e => {
     console.error(e);
-    show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Atmosphere couldn\'t start'), h('p', {}, e.message || String(e))));
+    show(h('div', { class: 'card atm-lock' }, h('h1', {}, 'Ecordiargus couldn\'t start'), h('p', {}, e.message || String(e))));
   }));
 })();
